@@ -1,0 +1,1572 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ห้องสมุดนักอ่าน - สะสมแต้มจากการอ่าน</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --paper: #EDF3E8;
+    --paper-deep: #DCE7D3;
+    --wood-dark: #1E3327;
+    --wood: #35513E;
+    --wood-light: #4E7059;
+    --wood-line: rgba(0,0,0,0.25);
+    --ink: #24301F;
+    --ink-soft: #58694E;
+    --cream: #F4ECD8;
+    --brass: #B4903F;
+    --brass-bright: #E0B563;
+    --unread: #96A08A;
+  }
+
+  *{ box-sizing:border-box; }
+
+  html,body{
+    margin:0;
+    padding:0;
+    background:var(--paper);
+    font-family:'Sarabun', sans-serif;
+    color:var(--ink);
+    overflow-x:hidden;
+  }
+
+  /* ---------- Login screen ---------- */
+  #loginScreen{
+    min-height:100vh;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    padding:24px;
+    background:
+      radial-gradient(ellipse at top, rgba(180,144,63,0.16), transparent 60%),
+      var(--paper);
+  }
+  .login-wrap{
+    width:100%;
+    max-width:380px;
+    display:flex;
+    flex-direction:column;
+    align-items:center;
+  }
+  .brand-block{
+    display:flex;
+    flex-direction:column;
+    align-items:center;
+    gap:10px;
+    margin-bottom:22px;
+    text-align:center;
+  }
+  .brand-block .brand-logo{
+    width:64px;
+    height:64px;
+    border-radius:50%;
+    background:#fff;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    flex-shrink:0;
+    overflow:hidden;
+    box-shadow:0 2px 8px rgba(0,0,0,0.18);
+  }
+  .brand-block .brand-logo img{ width:100%; height:100%; object-fit:cover; }
+  .brand-block .brand-name{
+    font-family:'Sarabun', sans-serif;
+    font-weight:600;
+    font-size:15.5px;
+    color:var(--ink);
+    line-height:1.5;
+    max-width:300px;
+  }
+  .login-footer{
+    margin-top:22px;
+    text-align:center;
+    font-size:12px;
+    line-height:1.8;
+    color:var(--ink-soft);
+  }
+  .login-footer .org-line{
+    font-weight:600;
+    color:var(--ink);
+    font-size:12.5px;
+    margin-bottom:2px;
+  }
+  .login-card{
+    width:100%;
+    max-width:380px;
+    background:rgba(255,255,255,0.4);
+    border:1px solid rgba(42,29,18,0.18);
+    border-radius:6px;
+    padding:40px 32px 34px;
+    text-align:center;
+    box-shadow:0 20px 50px rgba(0,0,0,0.15);
+  }
+  .login-card .eyebrow-line{ width:44px; height:2px; background:var(--brass); margin:0 auto 16px; }
+  .login-card h1{
+    font-family:'Sarabun', sans-serif;
+    font-weight:600;
+    font-size:26px;
+    margin:0 0 8px;
+  }
+  .login-card p.sub{
+    font-size:13.5px;
+    color:var(--ink-soft);
+    margin:0 0 28px;
+    line-height:1.6;
+  }
+  .field{ text-align:left; margin-bottom:16px; }
+  .field label{
+    display:block;
+    font-size:12.5px;
+    font-weight:600;
+    color:var(--ink-soft);
+    margin-bottom:6px;
+  }
+  .field input{
+    width:100%;
+    padding:11px 13px;
+    border:1px solid rgba(42,29,18,0.3);
+    border-radius:4px;
+    background:rgba(255,255,255,0.6);
+    font-family:'Sarabun', sans-serif;
+    font-size:14.5px;
+    color:var(--ink);
+  }
+  .field input:focus{
+    outline:none;
+    border-color:var(--brass);
+    background:#fff;
+  }
+  .login-error{
+    font-size:12.5px;
+    color:#A3372A;
+    margin:-6px 0 14px;
+    text-align:left;
+    display:none;
+  }
+  .btn{
+    display:inline-block;
+    width:100%;
+    padding:13px 20px;
+    background:var(--ink);
+    color:var(--cream);
+    border:none;
+    border-radius:4px;
+    font-family:'Sarabun', sans-serif;
+    font-size:15px;
+    font-weight:600;
+    cursor:pointer;
+    transition:background 0.15s ease, transform 0.1s ease;
+  }
+  .btn:hover{ background:var(--wood-light); }
+  .btn:active{ transform:scale(0.98); }
+  .btn:disabled{ opacity:0.4; cursor:not-allowed; }
+  .btn.secondary{
+    background:transparent;
+    color:var(--ink);
+    border:1px solid rgba(42,29,18,0.3);
+    margin-top:10px;
+  }
+  .btn.secondary:hover{ background:rgba(42,29,18,0.06); }
+
+  #appContent{ display:none; }
+
+  /* ---------- Header (library entrance) ---------- */
+  header{
+    position:relative;
+    padding:44px 24px 34px;
+    text-align:center;
+    background:var(--wood-dark);
+    color:var(--cream);
+    overflow:hidden;
+  }
+  .shelf-deco{
+    display:flex;
+    justify-content:center;
+    gap:5px;
+    margin-bottom:26px;
+    opacity:0.9;
+  }
+  .shelf-deco .spine{
+    width:15px;
+    border-radius:2px 2px 0 0;
+  }
+  header .eyebrow-line{
+    width:52px;
+    height:2px;
+    background:var(--brass);
+    margin:0 auto 14px;
+  }
+  header h1{
+    font-family:'Sarabun', sans-serif;
+    font-weight:600;
+    font-size:clamp(26px, 5vw, 38px);
+    margin:0 0 10px;
+    letter-spacing:0.5px;
+  }
+  header p.sub{
+    font-size:14.5px;
+    color:rgba(244,236,216,0.75);
+    margin:0 0 22px;
+    max-width:440px;
+    margin-left:auto;
+    margin-right:auto;
+    line-height:1.7;
+  }
+  .greeting{
+    font-size:13px;
+    color:rgba(244,236,216,0.65);
+    margin-bottom:16px;
+  }
+  .greeting .logout-link{
+    color:var(--brass-bright);
+    text-decoration:underline;
+    cursor:pointer;
+    margin-left:8px;
+  }
+  .points-pill{
+    display:inline-flex;
+    align-items:center;
+    gap:8px;
+    padding:10px 22px;
+    border-radius:999px;
+    border:1px solid var(--brass);
+    background:rgba(180,144,63,0.12);
+    color:var(--brass-bright);
+    font-size:14.5px;
+    font-weight:600;
+  }
+  .points-pill .book-count{
+    color:rgba(244,236,216,0.55);
+    font-weight:500;
+    font-size:13px;
+    border-left:1px solid rgba(224,181,99,0.35);
+    padding-left:10px;
+    margin-left:2px;
+  }
+
+  .points-toast{
+    position:fixed;
+    top:20px;
+    left:50%;
+    transform:translateX(-50%) translateY(-20px);
+    background:var(--ink);
+    color:var(--brass-bright);
+    padding:10px 22px;
+    border-radius:999px;
+    font-size:14px;
+    font-weight:600;
+    opacity:0;
+    pointer-events:none;
+    transition:opacity 0.25s ease, transform 0.25s ease;
+    z-index:80;
+  }
+  .points-toast.show{ opacity:1; transform:translateX(-50%) translateY(0); }
+
+  /* ---------- Library body ---------- */
+  .library{
+    max-width:920px;
+    margin:0 auto;
+    padding:40px 24px 70px;
+  }
+
+  /* ---------- Rewards redemption ---------- */
+  .rewards-section{
+    max-width:920px;
+    margin:0 auto;
+    padding:34px 24px 0;
+  }
+  .rewards-header{
+    display:flex;
+    align-items:baseline;
+    justify-content:space-between;
+    gap:14px;
+    margin-bottom:18px;
+    flex-wrap:wrap;
+  }
+  .rewards-header h2{
+    font-family:'Sarabun', sans-serif;
+    font-weight:700;
+    font-size:21px;
+    margin:0;
+    color:var(--ink);
+  }
+  .rewards-header .rewards-sub{
+    font-size:12.5px;
+    color:var(--ink-soft);
+    font-weight:600;
+  }
+  .rewards-row{
+    display:grid;
+    grid-template-columns:repeat(auto-fit, minmax(200px, 1fr));
+    gap:16px;
+  }
+  .reward-card{
+    background:rgba(255,255,255,0.5);
+    border:1px solid rgba(36,48,31,0.16);
+    border-radius:10px;
+    padding:20px 18px;
+    text-align:center;
+    display:flex;
+    flex-direction:column;
+    align-items:center;
+    gap:8px;
+  }
+  .reward-card .reward-icon{
+    width:52px;
+    height:52px;
+    border-radius:50%;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    margin-bottom:4px;
+    box-shadow:0 4px 10px rgba(0,0,0,0.18);
+  }
+  .reward-card .reward-icon svg{ width:26px; height:26px; }
+  .reward-card .reward-title{
+    font-family:'Sarabun', sans-serif;
+    font-weight:700;
+    font-size:15.5px;
+    color:var(--ink);
+  }
+  .reward-card .reward-cost{
+    font-size:13px;
+    font-weight:600;
+    color:var(--brass);
+    margin-bottom:6px;
+  }
+  .reward-card .btn{
+    padding:9px 18px;
+    font-size:13.5px;
+    width:auto;
+  }
+  .reward-card .btn:disabled{
+    opacity:0.4;
+    cursor:not-allowed;
+  }
+  .reward-card .reward-lack{
+    font-size:11.5px;
+    color:var(--ink-soft);
+  }
+
+  .site-footer{
+    max-width:920px;
+    margin:0 auto;
+    padding:26px 24px 40px;
+    text-align:center;
+    border-top:1px solid rgba(36,48,31,0.14);
+    font-size:12px;
+    line-height:1.9;
+    color:var(--ink-soft);
+  }
+  .site-footer .org-line{
+    font-family:'Sarabun', sans-serif;
+    font-weight:600;
+    color:var(--ink);
+    font-size:13.5px;
+    margin-bottom:3px;
+  }
+
+  .shelf-section{ margin-bottom:46px; }
+  .shelf-header{
+    display:flex;
+    align-items:baseline;
+    justify-content:space-between;
+    gap:14px;
+    margin-bottom:18px;
+    flex-wrap:wrap;
+  }
+  .shelf-header-left{
+    display:flex;
+    align-items:center;
+    gap:10px;
+  }
+  .shelf-icon-badge{
+    width:44px;
+    height:44px;
+    border-radius:13px;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    flex-shrink:0;
+    box-shadow:0 4px 10px rgba(0,0,0,0.2), inset 0 1px 0 rgba(255,255,255,0.18);
+  }
+  .shelf-icon{
+    width:24px; height:24px;
+    flex-shrink:0;
+  }
+  .shelf-header h2{
+    font-family:'Sarabun', sans-serif;
+    font-weight:600;
+    font-size:21px;
+    margin:0;
+    color:var(--ink);
+  }
+  .shelf-count{
+    font-size:12.5px;
+    color:var(--ink-soft);
+    font-weight:600;
+    white-space:nowrap;
+  }
+
+  .shelf-row{
+    display:flex;
+    flex-wrap:wrap;
+    align-items:flex-end;
+    gap:16px;
+    padding:6px 8px 0;
+  }
+
+  /* ---------- Book card ---------- */
+  .book{
+    position:relative;
+    width:118px;
+    display:flex;
+    flex-direction:column;
+    align-items:center;
+    cursor:pointer;
+    user-select:none;
+    transition:transform 0.18s ease;
+  }
+  .book:hover{ transform:translateY(-5px); }
+  .book.done{ transform:translateY(-8px); }
+  .book.done:hover{ transform:translateY(-11px); }
+
+  .book-cover{
+    position:relative;
+    width:118px;
+    height:158px;
+    border-radius:3px 9px 9px 3px;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    padding:14px 12px;
+    box-shadow:0 6px 0 rgba(0,0,0,0.22), 0 10px 16px rgba(0,0,0,0.2);
+    border-left:6px solid rgba(255,255,255,0.28);
+  }
+  .book-cover::after{
+    content:"";
+    position:absolute;
+    top:4px; bottom:4px; right:6px;
+    width:5px;
+    background:repeating-linear-gradient(
+      to bottom,
+      rgba(244,236,216,0.55) 0px,
+      rgba(244,236,216,0.55) 2px,
+      rgba(0,0,0,0.08) 2px,
+      rgba(0,0,0,0.08) 4px
+    );
+    border-radius:2px;
+  }
+  .book-cover-title{
+    font-family:'Sarabun', sans-serif;
+    font-weight:600;
+    font-size:14px;
+    line-height:1.3;
+    color:var(--cream);
+    text-align:center;
+    text-shadow:0 1px 2px rgba(0,0,0,0.25);
+    width:100%;
+    white-space:nowrap;
+    overflow:hidden;
+    text-overflow:ellipsis;
+  }
+  .book.unread .book-cover{ filter:saturate(0.55) brightness(0.92); }
+
+  .done-badge{
+    position:absolute;
+    top:-8px;
+    right:-8px;
+    width:26px;
+    height:26px;
+    border-radius:50%;
+    background:var(--brass-bright);
+    border:2px solid var(--wood-dark);
+    display:flex;
+    align-items:center;
+    justify-content:center;
+  }
+  .done-badge svg{ width:14px; height:14px; }
+
+  .book-title{
+    margin-top:10px;
+    font-family:'Sarabun', sans-serif;
+    font-size:13.5px;
+    font-weight:600;
+    text-align:center;
+    color:var(--ink);
+    line-height:1.3;
+    width:100%;
+    white-space:nowrap;
+    overflow:hidden;
+    text-overflow:ellipsis;
+  }
+  .book-status{
+    margin-top:2px;
+    font-size:11px;
+    color:var(--ink-soft);
+    font-weight:500;
+  }
+  .book.done .book-status{ color:#2F5D4E; }
+
+  .shelf-plank{
+    height:16px;
+    margin-top:12px;
+    background:linear-gradient(to bottom, var(--wood-light), var(--wood));
+    border-radius:2px;
+    box-shadow:0 4px 8px rgba(0,0,0,0.25), inset 0 2px 0 rgba(255,255,255,0.08);
+  }
+
+  /* ---------- Modal ---------- */
+  .overlay{
+    position:fixed; inset:0;
+    background:rgba(20,14,9,0.6);
+    display:none;
+    align-items:center;
+    justify-content:center;
+    padding:20px;
+    z-index:50;
+  }
+  .overlay.show{ display:flex; }
+
+  .modal{
+    background:var(--paper);
+    border:1px solid rgba(42,29,18,0.2);
+    border-radius:6px;
+    max-width:380px;
+    width:100%;
+    padding:32px 28px 28px;
+    text-align:center;
+    box-shadow:0 20px 50px rgba(0,0,0,0.35);
+    position:relative;
+  }
+  .modal.wide{
+    max-width:600px;
+    max-height:86vh;
+    overflow-y:auto;
+    text-align:left;
+  }
+  .modal .zone-tag{
+    display:inline-block;
+    font-size:12px;
+    letter-spacing:0.5px;
+    color:var(--brass);
+    font-weight:600;
+    margin-bottom:10px;
+  }
+  .modal h2{
+    font-family:'Sarabun', sans-serif;
+    font-size:24px;
+    margin:0 0 12px;
+    color:var(--ink);
+  }
+  .modal p{
+    font-size:14.5px;
+    color:var(--ink-soft);
+    line-height:1.7;
+    margin:0 0 24px;
+  }
+  .attempt-note{
+    font-size:13px;
+    font-weight:600;
+    color:var(--brass);
+    margin:-6px 0 18px;
+    text-align:center;
+  }
+  .attempt-note.warn{ color:#A3372A; }
+
+  .passage-box{
+    background:rgba(255,255,255,0.45);
+    border:1px solid rgba(42,29,18,0.15);
+    border-left:3px solid var(--brass);
+    border-radius:4px;
+    padding:18px 20px;
+    margin-bottom:22px;
+    font-size:14.5px;
+    line-height:1.9;
+    color:var(--ink);
+    text-align:left;
+    max-height:230px;
+    overflow-y:auto;
+  }
+
+  .quiz-progress{
+    font-size:12.5px;
+    color:var(--ink-soft);
+    margin-bottom:6px;
+    text-align:left;
+    font-weight:600;
+  }
+
+  .question-block{
+    margin-bottom:20px;
+    padding-bottom:18px;
+    border-bottom:1px solid rgba(42,29,18,0.12);
+  }
+  .question-block:last-of-type{ border-bottom:none; }
+  .question-block .q-text{
+    font-size:14.5px;
+    font-weight:600;
+    color:var(--ink);
+    margin-bottom:10px;
+    line-height:1.6;
+  }
+  .question-block .q-num{ color:var(--brass); margin-right:4px; }
+
+  .option-row{
+    display:flex;
+    align-items:flex-start;
+    gap:9px;
+    padding:8px 10px;
+    border-radius:4px;
+    cursor:pointer;
+    font-size:14px;
+    line-height:1.6;
+    color:var(--ink-soft);
+    transition:background 0.12s ease;
+  }
+  .option-row:hover{ background:rgba(180,144,63,0.08); }
+  .option-row input{ margin-top:4px; accent-color:var(--ink); }
+  .option-row.selected{
+    background:rgba(180,144,63,0.16);
+    color:var(--ink);
+    font-weight:500;
+  }
+
+  .result-stats{
+    display:flex;
+    justify-content:center;
+    gap:26px;
+    margin-bottom:22px;
+  }
+  .result-stats > div{ text-align:center; }
+  .result-stats .num{
+    display:block;
+    font-family:'Sarabun', sans-serif;
+    font-size:22px;
+    font-weight:600;
+    color:var(--ink);
+  }
+  .result-stats .lbl{
+    display:block;
+    font-size:11.5px;
+    color:var(--ink-soft);
+    margin-top:2px;
+  }
+  .result-note{
+    font-size:13.5px;
+    color:var(--ink-soft);
+    margin:-14px 0 22px;
+    text-align:center;
+  }
+  .review-list{
+    text-align:left;
+    margin:0 0 24px;
+    padding:0;
+    list-style:none;
+  }
+  .review-list li{
+    font-size:13px;
+    line-height:1.7;
+    padding:8px 10px;
+    border-radius:4px;
+    margin-bottom:6px;
+  }
+  .review-list li.right{ background:rgba(47,93,78,0.12); color:#2F5D4E; }
+  .review-list li.wrong{ background:rgba(163,55,42,0.1); color:#A3372A; }
+
+  @media (max-width:480px){
+    .shelf-row{ gap:12px; }
+    .book, .book-cover{ width:100px; }
+    .book-cover{ height:140px; }
+  }
+</style>
+</head>
+<body>
+
+<div id="loginScreen">
+  <div class="login-wrap">
+    <div class="brand-block">
+      <div class="brand-logo">
+        <img src="https://i.postimg.cc/VL6wMvrJ/1.png" alt="ตราศูนย์ส่งเสริมการเรียนรู้ระดับอำเภอเทิง">
+      </div>
+      <div class="brand-name">ศูนย์ส่งเสริมการเรียนรู้ระดับอำเภอเทิง</div>
+    </div>
+    <div class="login-card">
+      <div class="eyebrow-line"></div>
+      <h1>ห้องสมุดนักอ่าน</h1>
+      <p class="sub">เข้าสู่ระบบเพื่ออ่านเรื่องราวหลากหลายหมวดหมู่ ทำแบบทดสอบท้ายเรื่อง เพื่อสะสมแต้ม</p>
+      <form id="loginForm">
+        <div class="field">
+          <label for="loginName">ชื่อนักอ่าน</label>
+          <input type="text" id="loginName" autocomplete="username" required>
+        </div>
+        <div class="field">
+          <label for="loginPass">รหัสผ่าน</label>
+          <input type="password" id="loginPass" autocomplete="current-password" required>
+        </div>
+        <p style="font-size:11.5px; color:var(--ink-soft); margin:-8px 0 16px; line-height:1.6;">
+        หากเป็นการเข้าใช้ครั้งแรก ระบบจะสร้างบัญชีให้อัตโนมัติด้วยรหัสผ่านนี้ ครั้งต่อไปต้องใช้รหัสผ่านเดิม
+      </p>
+        <div class="login-error" id="loginError"></div>
+        <button class="btn" type="submit">เข้าสู่ระบบ</button>
+      </form>
+    </div>
+    <div class="login-footer">
+      <div>สร้างสรรค์โดย นายวนศาสตร์ วัฒนาสกุลลี ครู สกร.ระดับอำเภอเทิง</div>
+    </div>
+  </div>
+</div>
+
+<div id="appContent">
+  <header>
+    <div class="shelf-deco" id="shelfDeco"></div>
+    <div class="eyebrow-line"></div>
+    <h1>ห้องสมุดนักอ่าน</h1>
+    <p class="sub">เลือกอ่านเรื่องไหนก่อนก็ได้ ทุกหมวดหมู่เปิดให้อ่านพร้อมกัน ทำแบบทดสอบท้ายเรื่องให้ถูกครบเพื่อรับแต้ม</p>
+    <div class="greeting" id="greetingText"></div>
+    <div class="points-pill">
+      <span id="pointsText">0</span> แต้ม
+      <span class="book-count" id="bookCountText">อ่านแล้ว 0/0 เล่ม</span>
+    </div>
+  </header>
+
+  <div class="rewards-section" id="rewardsSection"></div>
+
+  <div class="library" id="libraryRoot"></div>
+
+  <footer class="site-footer">
+    <div class="org-line">ศูนย์ส่งเสริมการเรียนรู้ระดับอำเภอเทิง</div>
+    <div>สร้างสรรค์โดย นายวนศาสตร์ วัฒนาสกุลลี ครู สกร.ระดับอำเภอเทิง</div>
+  </footer>
+</div>
+
+<div class="points-toast" id="pointsToast"></div>
+
+<div class="overlay" id="overlay">
+  <div class="modal" id="modalReady">
+    <div class="zone-tag" id="readyZoneTag">หมวดหมู่</div>
+    <h2 id="readyTitle">ชื่อเรื่อง</h2>
+    <p id="readyDesc">ท่านพร้อมที่จะตอบคำถามเราหรือไม่ ? เมื่อเริ่มแล้วจะมีคำถามทั้งหมด 5 ข้อ</p>
+    <p class="attempt-note" id="attemptNote"></p>
+    <button class="btn" id="startBtn">พร้อม !</button>
+    <button class="btn secondary" id="closeReady">ปิด</button>
+  </div>
+
+  <div class="modal wide" id="modalQuiz" style="display:none;">
+    <div class="zone-tag" id="quizZoneTag">หมวดหมู่</div>
+    <h2 id="quizTitle" style="margin-bottom:6px;">ชื่อเรื่อง</h2>
+    <div class="attempt-note" id="quizAttemptNote" style="margin-bottom:14px;"></div>
+    <div class="passage-box" id="passageBox"></div>
+    <div class="quiz-progress" id="quizProgress">ตอบแล้ว 0/5 ข้อ</div>
+    <div id="questionsWrap"></div>
+    <button class="btn" id="submitBtn" disabled>ส่งคำตอบ</button>
+  </div>
+
+  <div class="modal" id="modalResult" style="display:none;">
+    <div class="zone-tag" id="resultZoneTag">สรุปผล</div>
+    <h2 id="resultTitle">ผ่านด่านสำเร็จ</h2>
+    <div class="result-stats">
+      <div><span class="num" id="resultScore">5/5</span><span class="lbl">ตอบถูก</span></div>
+      <div><span class="num" id="resultLevel">สูง</span><span class="lbl">ระดับ</span></div>
+      <div><span class="num" id="resultTime">01:24</span><span class="lbl">เวลา</span></div>
+    </div>
+    <ul class="review-list" id="reviewList"></ul>
+    <p class="result-note" id="resultNote" style="display:none;"></p>
+    <button class="btn" id="continueBtn">ไปต่อ</button>
+    <button class="btn secondary" id="retryBtn" style="display:none;">ลองใหม่</button>
+  </div>
+
+  <div class="modal" id="modalRewardConfirm" style="display:none;">
+    <div class="zone-tag">แลกรางวัล</div>
+    <h2 id="rewardConfirmTitle">รางวัลขนาดใหญ่</h2>
+    <p id="rewardConfirmDesc">ยืนยันแลกรางวัลนี้ด้วย 50 แต้มหรือไม่ ?</p>
+    <button class="btn" id="rewardConfirmBtn">ยืนยันแลกรางวัล</button>
+    <button class="btn secondary" id="rewardCancelBtn">ยกเลิก</button>
+  </div>
+
+  <div class="modal" id="modalRewardDone" style="display:none;">
+    <div class="zone-tag">แลกรางวัลสำเร็จ</div>
+    <h2 id="rewardDoneTitle">ยินดีด้วย !</h2>
+    <p id="rewardDoneDesc">คุณแลกรางวัลขนาดใหญ่เรียบร้อยแล้ว</p>
+    <button class="btn" id="rewardDoneBtn">ปิด</button>
+  </div>
+</div>
+
+<script>
+/* ===================================================================
+   CONFIG - Google Sheet backend
+   Wire format kept IDENTICAL to the previous version, plus one new action:
+   - login: { action:'login', name, pass } -> { status, message, totalPoints, progress:[indices] }
+   - getContent: { action:'getContent' } -> { status, zones:[{key,title,passage,questions}] }
+   - saveResult: { action:'saveResult', name, zoneIdx, zoneKey, score, total, time, points, passed }
+   "zoneIdx" is this book's position in the flattened BOOKS array below (categories
+   are just a display grouping; the underlying list order is fixed), and "zoneKey"
+   is the book's unique key. Existing rows in the sheet for sukhothai / ayutthaya /
+   thonburi / rattanakosin_early / rattanakosin_modern keep working unchanged since
+   those five keep the same keys and the same order (indices 0-4).
+
+   - redeemReward (NEW): { action:'redeemReward', name, rewardKey, rewardTitle, cost }
+     -> { status:'ok', totalPoints, redeemedPoints }
+     Sent when the reader spends points on a reward. The sheet should keep at
+     least two running columns per user: "แต้มรวม" (their totalPoints, going
+     down after a redemption) and "แต้มแลก" (a running sum of all points ever
+     redeemed, going up by `cost` each time). The response's totalPoints
+     becomes the new source of truth on screen; redeemedPoints (if returned)
+     is shown as a small stat. If the backend call fails, the app falls back
+     to deducting `cost` from the points shown locally so the UI still works,
+     but nothing is durably saved until the sheet is wired up.
+=================================================================== */
+const CONFIG = {
+  SHEET_API_URL: "https://script.google.com/macros/s/AKfycbyNESQfal_WjAIm6LPwWwOpns_wawfMvC5uKDxM6V1oeqSKngg8ju8RbghfvjDmwt_RJg/exec"
+};
+
+async function callSheetApi(params){
+  if(!CONFIG.SHEET_API_URL) return null;
+  try{
+    const url = new URL(CONFIG.SHEET_API_URL);
+    Object.keys(params).forEach(k => url.searchParams.set(k, params[k]));
+    const res = await fetch(url.toString());
+    return await res.json();
+  }catch(err){
+    console.warn("Sheet API error:", err);
+    return null;
+  }
+}
+
+async function loadRemoteContent(){
+  if(!CONFIG.SHEET_API_URL) return;
+  const res = await callSheetApi({ action:'getContent' });
+  if(res && res.status === "ok" && Array.isArray(res.zones)){
+    res.zones.forEach(rz=>{
+      const b = books.find(bb=> bb.key === rz.key);
+      if(!b) return;
+      if(rz.title) b.title = rz.title;
+      if(rz.passage) b.passage = rz.passage;
+      if(Array.isArray(rz.questions) && rz.questions.length === b.questions.length){
+        b.questions = rz.questions.map(q=> ({ q: q.q, options: q.options, correct: q.correct }));
+      }
+    });
+    render();
+  }
+}
+
+/* ===================================================================
+   CATEGORIES
+=================================================================== */
+const categories = [
+  {
+    key:"history", title:"ประวัติศาสตร์ชาติไทย", badge:"#B46B2C",
+    icon:`<path d="M12 2.3l2.1 2.9h-4.2z" fill="#fff"/><rect x="11.1" y="5.2" width="1.8" height="2.6" fill="#fff"/><path d="M7.4 9.4c0-2.3 2.1-4.1 4.6-4.1s4.6 1.8 4.6 4.1v1.4H7.4z" fill="#fff"/><path d="M5.6 12.8h12.8l1.2 3.4H4.4z" fill="#fff"/><path d="M4 17.9c0-1.2 1-2.1 2.3-2.1h11.4c1.3 0 2.3.9 2.3 2.1v2.8H4z" fill="#fff"/><rect x="2.3" y="21.1" width="19.4" height="1.9" rx="0.5" fill="#fff"/>`
+  },
+  {
+    key:"novel", title:"นวนิยาย", badge:"#7A3B66",
+    icon:`<path d="M12 6.1c-1.9-1.6-4.7-2.1-7.2-1.3-.5.16-.8.6-.8 1.1v13.3c0 .7.66 1.2 1.35.98 2.35-.74 4.98-.34 6.65 1.02 1.67-1.36 4.3-1.76 6.65-1.02.7.22 1.35-.27 1.35-.98V5.9c0-.5-.3-.94-.8-1.1-2.5-.8-5.3-.3-7.2 1.3z" fill="#fff"/><path d="M12 6.1v13.9" stroke="#5A2A4C" stroke-width="0.9" stroke-linecap="round"/><circle cx="17.6" cy="7.4" r="1.7" fill="#E0B563"/>`
+  },
+  {
+    key:"inspire", title:"หนังสือสร้างแรงบันดาลใจ", badge:"#1F6E5C",
+    icon:`<path d="M12 3.2a5.8 5.8 0 00-3.4 10.5c.75.55 1.2 1.4 1.2 2.3v.4h4.4v-.4c0-.9.45-1.75 1.2-2.3A5.8 5.8 0 0012 3.2z" fill="#fff"/><rect x="9.6" y="17.6" width="4.8" height="1.5" rx="0.75" fill="#fff"/><rect x="10.1" y="19.7" width="3.8" height="1.3" rx="0.65" fill="#fff"/><path d="M12 6.6a3.1 3.1 0 00-1.9 5.5" stroke="#1F6E5C" stroke-width="0.9" stroke-linecap="round" fill="none"/>`
+  }
+];
+
+/* ===================================================================
+   REWARDS - redeemable with points
+=================================================================== */
+const rewards = [
+  {
+    key:"large", title:"รางวัลขนาดใหญ่", cost:50, color:"#B4791F",
+    icon:`<path d="M4 10h16v10a1 1 0 01-1 1H5a1 1 0 01-1-1z" fill="#fff"/><path d="M3 7h18v3a1 1 0 01-1 1H4a1 1 0 01-1-1z" fill="#fff"/><rect x="11" y="7" width="2" height="14" fill="#B4791F"/><path d="M12 7C10 3 6 3 6 5.5S9 7 12 7zM12 7c2-4 6-4 6-1.5S15 7 12 7z" fill="#fff"/>`
+  },
+  {
+    key:"medium", title:"รางวัลขนาดกลาง", cost:40, color:"#2E8069",
+    icon:`<path d="M4.5 10.5h15v9a1 1 0 01-1 1h-13a1 1 0 01-1-1z" fill="#fff"/><path d="M3.5 7.5h17v2.7a1 1 0 01-1 1h-15a1 1 0 01-1-1z" fill="#fff"/><rect x="11.2" y="7.5" width="1.6" height="13" fill="#2E8069"/><path d="M12 7.5c-1.6-3.2-4.8-3.2-4.8-1.1S9.6 7.5 12 7.5zM12 7.5c1.6-3.2 4.8-3.2 4.8-1.1S14.4 7.5 12 7.5z" fill="#fff"/>`
+  },
+  {
+    key:"small", title:"รางวัลขนาดเล็ก", cost:30, color:"#1F6E5C",
+    icon:`<path d="M5.5 11h13v7.5a1 1 0 01-1 1h-11a1 1 0 01-1-1z" fill="#fff"/><path d="M4.7 8.4h14.6v2.3a1 1 0 01-1 1H5.7a1 1 0 01-1-1z" fill="#fff"/><rect x="11.3" y="8.4" width="1.4" height="11.1" fill="#1F6E5C"/><path d="M12 8.4c-1.3-2.6-3.9-2.6-3.9-.9S9.9 8.4 12 8.4zM12 8.4c1.3-2.6 3.9-2.6 3.9-.9S14.1 8.4 12 8.4z" fill="#fff"/>`
+  }
+];
+
+/* ===================================================================
+   BOOKS (flattened list - index order below is the wire "zoneIdx")
+=================================================================== */
+const books = [
+  {
+    key:"sukhothai", categoryKey:"history", title:"อาณาจักรสุโขทัย", color:"#2F5D4E",
+    passage:"อาณาจักรสุโขทัยได้รับการสถาปนาขึ้นในราวพุทธศตวรรษที่ 18 ถือเป็นราชธานีแห่งแรกของคนไทยที่มีหลักฐานทางประวัติศาสตร์ชัดเจน กษัตริย์ผู้ทรงสถาปนาคือ พ่อขุนศรีอินทราทิตย์ สุโขทัยเจริญรุ่งเรืองอย่างมากในรัชสมัยของพ่อขุนรามคำแหงมหาราช ผู้ทรงประดิษฐ์อักษรไทยขึ้นใน พ.ศ. 1826 ด้านการปกครองใช้รูปแบบ 'พ่อปกครองลูก' กษัตริย์มีความใกล้ชิดกับประชาชน อีกทั้งยังมีการค้าขายอย่างเสรีดังปรากฏในหลักศิลาจารึกว่า 'ในน้ำมีปลา ในนามีข้าว' นอกจากนี้ยังเป็นยุคที่พระพุทธศาสนานิกายลังกาวงศ์เข้ามาเผยแผ่จนเจริญรุ่งเรือง",
+    questions:[
+      { q:"อาณาจักรสุโขทัยถือเป็นราชธานีแห่งแรกที่มีสิ่งใดชัดเจน", options:["หลักฐานทางประวัติศาสตร์","กองทัพที่ยิ่งใหญ่ที่สุด","การติดต่อกับยุโรป","กำแพงเมืองคอนกรีต"], correct:0 },
+      { q:"ปฐมกษัตริย์ผู้ทรงสถาปนาอาณาจักรสุโขทัยคือใคร", options:["พ่อขุนรามคำแหงมหาราช","พ่อขุนศรีอินทราทิตย์","สมเด็จพระนเรศวรมหาราช","พระยาลิไทย"], correct:1 },
+      { q:"พ่อขุนรามคำแหงมหาราชทรงประดิษฐ์อักษรไทยขึ้นเมื่อ พ.ศ. ใด", options:["พ.ศ. 1792","พ.ศ. 1826","พ.ศ. 1900","พ.ศ. 2000"], correct:1 },
+      { q:"การปกครองในสมัยสุโขทัยมีลักษณะแบบใด", options:["เทวราชา","พ่อปกครองลูก","ประชาธิปไตย","สมบูรณาญาสิทธิราชย์"], correct:1 },
+      { q:"ศาสนาใดเข้ามามีอิทธิพลและเจริญรุ่งเรืองในสมัยสุโขทัย", options:["พระพุทธศาสนานิกายลังกาวงศ์","ศาสนาพราหมณ์-ฮินดู","ศาสนาคริสต์","ศาสนาอิสลาม"], correct:0 }
+    ]
+  },
+  {
+    key:"ayutthaya", categoryKey:"history", title:"อาณาจักรอยุธยา", color:"#2E6E7E",
+    passage:"อาณาจักรอยุธยาถูกสถาปนาขึ้นโดย สมเด็จพระรามาธิบดีที่ 1 (พระเจ้าอู่ทอง) ใน พ.ศ. 1893 มีศูนย์กลางอยู่ที่เกาะเมืองอยุธยาซึ่งมีแม่น้ำสำคัญ 3 สายล้อมรอบ ได้แก่ แม่น้ำเจ้าพระยา แม่น้ำป่าสัก และแม่น้ำลพบุรี อยุธยาเป็นราชธานีที่ยาวนานถึง 417 ปี มีกษัตริย์ปกครอง 33 พระองค์ มีความเจริญรุ่งเรืองทั้งด้านการทหาร วัฒนธรรม และการค้ากับต่างประเทศ โดยเฉพาะในสมัยสมเด็จพระนารายณ์มหาราชที่มีการส่งเจริญสัมพันธไมตรีกับประเทศฝรั่งเศส แม้จะเสียกรุงศรีอยุธยาถึง 2 ครั้ง แต่ก็ได้รับการกอบกู้เอกราชคืนมาได้เสมอ",
+    questions:[
+      { q:"ผู้สถาปนากรุงศรีอยุธยาคือใคร", options:["สมเด็จพระนเรศวรมหาราช","สมเด็จพระรามาธิบดีที่ 1 (พระเจ้าอู่ทอง)","สมเด็จพระเอกาทศรถ","สมเด็จพระนารายณ์มหาราช"], correct:1 },
+      { q:"กรุงศรีอยุธยามีอายุเป็นราชธานียาวนานกี่ปี", options:["200 ปี","300 ปี","417 ปี","500 ปี"], correct:2 },
+      { q:"แม่น้ำสายใดไม่ได้ล้อมรอบเกาะเมืองอยุธยา", options:["แม่น้ำเจ้าพระยา","แม่น้ำป่าสัก","แม่น้ำลพบุรี","แม่น้ำแม่กลอง"], correct:3 },
+      { q:"ในรัชสมัยใดที่มีการส่งทูตไปเจริญสัมพันธไมตรีกับประเทศฝรั่งเศส", options:["สมเด็จพระนารายณ์มหาราช","สมเด็จพระบรมไตรโลกนาถ","สมเด็จพระนเรศวรมหาราช","พระเจ้าตากสินมหาราช"], correct:0 },
+      { q:"กรุงศรีอยุธยาเสียกรุงรวมทั้งหมดกี่ครั้ง", options:["1 ครั้ง","2 ครั้ง","3 ครั้ง","4 ครั้ง"], correct:1 }
+    ]
+  },
+  {
+    key:"thonburi", categoryKey:"history", title:"อาณาจักรธนบุรี", color:"#2B4D2E",
+    passage:"หลังจากเสียกรุงศรีอยุธยาครั้งที่สองใน พ.ศ. 2310 พระยาตาก (สิน) ได้กอบกู้เอกราชคืนมาได้ภายในเวลาเพียง 7 เดือน และทรงสถาปนา 'กรุงธนบุรี' เป็นราชธานีแห่งใหม่ เนื่องจากอยุธยาเสียหายหนักเกินกว่าจะฟื้นฟู และธนบุรีมีชัยภูมิทางยุทธศาสตร์ที่ดี ติดแม่น้ำเจ้าพระยา ใกล้ทะเล สะดวกแก่การค้าขายและตั้งรับศัตรู สมเด็จพระเจ้าตากสินมหาราชทรงทำสงครามรวบรวมแผ่นดินให้เป็นปรกแผ่น ฟื้นฟูเศรษฐกิจ ศาสนา และศิลปวัฒนธรรมตลอดรัชกาล 15 ปี ก่อนจะสิ้นสุดยุคธนบุรีลง",
+    questions:[
+      { q:"ใครเป็นผู้กอบกู้เอกราชและสถาปนากรุงธนบุรี", options:["พระบาทสมเด็จพระพุทธยอดฟ้าจุฬาโลกมหาราช","สมเด็จพระเจ้าตากสินมหาราช","สมเด็จพระนเรศวรมหาราช","พ่อขุนรามคำแหงมหาราช"], correct:1 },
+      { q:"สมเด็จพระเจ้าตากสินทรงใช้เวลากี่เดือนในการกอบกู้เอกราชหลังเสียกรุงครั้งที่ 2", options:["5 เดือน","7 เดือน","12 เดือน","2 ปี"], correct:1 },
+      { q:"ข้อใดเป็นเหตุผลสำคัญในการย้ายราชธานีมายังกรุงธนบุรี", options:["อยุธยาเสียหายหนักและธนบุรีใกล้ทะเลสะดวกแก่การค้า","ธนบุรีมีพื้นที่กว้างขวางกว่า","อยุธยาไม่มีแม่น้ำไหลผ่าน","ประชาชนต้องการย้ายเมือง"], correct:0 },
+      { q:"กรุงธนบุรีเป็นราชธานียาวนานกี่ปี", options:["10 ปี","15 ปี","20 ปี","25 ปี"], correct:1 },
+      { q:"สมเด็จพระเจ้าตากสินมหาราชทรงเน้นภารกิจหลักด้านใดในรัชสมัยของพระองค์", options:["การขยายอาณาเขตไปยุโรป","การรวบรวมแผ่นดินและฟื้นฟูบ้านเมือง","การสร้างพระปรางค์วัดอรุณ","การทำสงครามเรือรบ"], correct:1 }
+    ]
+  },
+  {
+    key:"rattanakosin_early", categoryKey:"history", title:"รัตนโกสินทร์ตอนต้น", color:"#C1502E",
+    passage:"ใน พ.ศ. 2325 พระบาทสมเด็จพระพุทธยอดฟ้าจุฬาโลกมหาราช (รัชกาลที่ 1) ทรงสถาปนากรุงรัตนโกสินทร์ขึ้นทางฝั่งตะวันออกของแม่น้ำเจ้าพระยา (กรุงเทพมหานคร) ทรงสร้างพระบรมมหาราชวังและวัดพระศรีรัตนศาสดาราม ในยุคนี้มีการฟื้นฟูกฎหมายโดยสังคายนา 'กฎหมายตราสามดวง' และสังคายนาพระไตรปิฎก รัชกาลที่ 2 และรัชกาลที่ 3 ทรงส่งเสริมวรรณคดีและการค้ากับจีนอย่างขยายตัว เกิดวรรณคดีสำคัญอย่างขุนช้างขุนแผนและพระอภัยมณี ถือเป็นยุคแห่งการสร้างสรรค์และวางรากฐานความมั่นคงให้แก่ประเทศ",
+    questions:[
+      { q:"พระมหากษัตริย์พระองค์ใดทรงสถาปนากรุงรัตนโกสินทร์", options:["รัชกาลที่ 1","รัชกาลที่ 2","รัชกาลที่ 3","รัชกาลที่ 4"], correct:0 },
+      { q:"กรุงรัตนโกสินทร์ได้รับการสถาปนาขึ้นใน พ.ศ. ใด", options:["พ.ศ. 2310","พ.ศ. 2325","พ.ศ. 2410","พ.ศ. 2475"], correct:1 },
+      { q:"กฎหมายสำคัญที่มีการสังคายนาในรัชกาลที่ 1 คือกฎหมายใด", options:["กฎหมายตราสามดวง","กฎหมายลักษณะอาญา","รัฐธรรมนูญ","กฎหมายมณเฑียรบาล"], correct:0 },
+      { q:"ในสมัยรัชกาลที่ 3 มีการส่งเสริมการค้าขายกับประเทศใดเป็นพิเศษ", options:["อังกฤษ","ฝรั่งเศส","จีน","โปรตุเกส"], correct:2 },
+      { q:"วัดสำคัญที่สร้างขึ้นพร้อมกับการสถาปนากรุงรัตนโกสินทร์คือวัดใด", options:["วัดอรุณราชวราราม","วัดพระศรีรัตนศาสดาราม","วัดบวรนิเวศวิหาร","วัดสุทัศนเทพวราราม"], correct:1 }
+    ]
+  },
+  {
+    key:"rattanakosin_modern", categoryKey:"history", title:"การปฏิรูปสู่สยามสมัยใหม่", color:"#7A2E2E",
+    passage:"ช่วงรัชกาลที่ 4 ถึงรัชกาลที่ 5 สยามเผชิญกับการคุกคามจากมหาอำนาจตะวันตก พระบาทสมเด็จพระจุลจอมเกล้าเจ้าอยู่หัว (รัชกาลที่ 5) จึงทรงปฏิรูปประเทศครั้งใหญ่ในทุกด้าน เช่น การเลิกทาส การเลิกไพร่ การจัดตั้งกระทรวงแบบใหม่ การสร้างรถไฟ โทรเลข และโรงพยาบาล ทำให้ประเทศไทยรักษาเอกราชไว้ได้เพียงประเทศเดียวในภูมิภาค ต่อมาใน พ.ศ. 2475 ได้เกิดการเปลี่ยนแปลงการปกครองมาเป็นระบอบประชาธิปไตยอันมีพระมหากษัตริย์ทรงเป็นประธาน และเปลี่ยนชื่อประเทศจาก 'สยาม' เป็น 'ไทย' ในเวลาต่อมา",
+    questions:[
+      { q:"พระมหากษัตริย์พระองค์ใดทรงทำการปฏิรูปประเทศครั้งใหญ่และทรงเลิกทาส", options:["พระบาทสมเด็จพระจอมเกล้าเจ้าอยู่หัว (รัชกาลที่ 4)","พระบาทสมเด็จพระจุลจอมเกล้าเจ้าอยู่หัว (รัชกาลที่ 5)","พระบาทสมเด็จพระมงกุฎเกล้าเจ้าอยู่หัว (รัชกาลที่ 6)","พระบาทสมเด็จพระปกเกล้าเจ้าอยู่หัว (รัชกาลที่ 7)"], correct:1 },
+      { q:"การปฏิรูปประเทศในสมัยรัชกาลที่ 5 มีเป้าหมายสำคัญเพื่อสิ่งใด", options:["ขยายอาณาเขตไปรบต่างแดน","รักษาเอกราชและพาประเทศสู่ความทันสมัย","เพิ่มภาษีอากร","สร้างปราสาทหิน"], correct:1 },
+      { q:"ประเทศไทยเปลี่ยนแปลงการปกครองมาเป็นระบอบประชาธิปไตยใน พ.ศ. ใด", options:["พ.ศ. 2411","พ.ศ. 2475","พ.ศ. 2482","พ.ศ. 2500"], correct:1 },
+      { q:"สาธารณูปโภคแรกๆ ที่เริ่มเกิดขึ้นในสมัยปฏิรูปประเทศคือข้อใด", options:["รถไฟและโทรเลข","สนามบินนานาชาติ","ดาวเทียมสื่อสาร","ทางด่วนยกระดับ"], correct:0 },
+      { q:"ชื่อประเทศถูกเปลี่ยนจาก 'สยาม' เป็น 'ไทย' ในช่วงหลังการเปลี่ยนแปลงสิ่งใด", options:["การเปลี่ยนรัชกาล","การเปลี่ยนแปลงการปกครอง","การสงครามโลกครั้งที่ 1","การเลิกทาส"], correct:1 }
+    ]
+  },
+  {
+    key:"novel1", categoryKey:"novel", title:"แสงสุดท้ายที่ท่าเรือ", color:"#6B3550",
+    passage:"เมฆสีส้มลอยต่ำเหนือท่าเรือเล็ก ๆ ของหมู่บ้านชายฝั่ง มะลิยืนอยู่ริมท่าไม้เก่า มือกำผ้าพันคอผืนเดิมที่พ่อเคยใช้ตอนออกเรือ วันนี้เป็นวันที่สิบสี่แล้วที่เรือของพ่อยังไม่กลับมา ชาวบ้านบางคนกระซิบกันว่าพายุลูกก่อนอาจพัดเรือให้หลงทาง แต่มะลิไม่ยอมเชื่อ เธอยังคงเดินมานั่งที่ท่าเรือทุกเย็นเหมือนที่เคยทำมาตลอดสิบสามปีที่ผ่านมา เพื่อนบ้านชื่อลุงเคียมเดินมานั่งข้าง ๆ พร้อมโคมไฟเก่า พูดเบา ๆ ว่า 'ทะเลใจดีกับคนที่ไม่ยอมแพ้เสมอนะ' แล้วทั้งสองก็นั่งมองแสงสุดท้ายของวันจมลงสู่เส้นขอบฟ้าด้วยกัน",
+    questions:[
+      { q:"มะลิยืนรออยู่ที่ใด", options:["สถานีรถไฟ","ท่าเรือของหมู่บ้าน","ตลาดเช้า","สนามบิน"], correct:1 },
+      { q:"มะลิถือสิ่งใดติดมือไว้", options:["ร่มสีแดง","ผ้าพันคอของพ่อ","หนังสือเก่า","ตะกร้าผลไม้"], correct:1 },
+      { q:"เรือของพ่อหายไปนานกี่วันแล้ว", options:["7 วัน","10 วัน","14 วัน","20 วัน"], correct:2 },
+      { q:"ใครเดินมานั่งข้าง ๆ มะลิที่ท่าเรือ", options:["แม่ของมะลิ","ลุงเคียม","ครูประจำหมู่บ้าน","เพื่อนสนิท"], correct:1 },
+      { q:"ลุงเคียมพูดประโยคใดกับมะลิ", options:["'พรุ่งนี้อากาศจะดีขึ้น'","'ทะเลใจดีกับคนที่ไม่ยอมแพ้เสมอนะ'","'กลับบ้านไปพักผ่อนเถอะ'","'อย่ามัวแต่รอเลย'"], correct:1 }
+    ]
+  },
+  {
+    key:"novel2", categoryKey:"novel", title:"จดหมายที่ไม่ได้ส่ง", color:"#8B4A63",
+    passage:"สมชายทำงานเป็นบุรุษไปรษณีย์มาสามสิบปี วันหนึ่งขณะจัดของในห้องเก็บพัสดุเก่า เขาพบกล่องกระดาษใบหนึ่งซุกอยู่หลังชั้นวางที่ไม่มีใครแตะต้องมานาน ข้างในมีจดหมายผู้หญิงคนหนึ่งเขียนถึงคนรักเมื่อสี่สิบกว่าปีก่อน แต่ไม่เคยถูกส่งออกไปเพราะที่อยู่บนซองเลือนจนอ่านไม่ออก สมชายอ่านจดหมายอย่างตั้งใจ พบว่าผู้เขียนชื่อวิไล เขาใช้เวลาหลายสัปดาห์สืบหาว่าวิไลยังมีชีวิตอยู่หรือไม่ จนในที่สุดก็พบว่าเธออาศัยอยู่ในบ้านพักคนชราไม่ไกลจากที่ทำการไปรษณีย์นัก เมื่อสมชายนำจดหมายไปมอบให้ วิไลถึงกับน้ำตาไหล เธอบอกว่ารอคำตอบนี้มาทั้งชีวิต",
+    questions:[
+      { q:"สมชายทำงานอาชีพใด", options:["ครู","บุรุษไปรษณีย์","ตำรวจ","ชาวประมง"], correct:1 },
+      { q:"สมชายพบจดหมายที่ใด", options:["ใต้เตียงบ้านตัวเอง","ห้องเก็บพัสดุเก่า","ในรถไปรษณีย์","ที่สนามหญ้าหลังบ้าน"], correct:1 },
+      { q:"เหตุใดจดหมายจึงไม่เคยถูกส่งออกไป", options:["ผู้เขียนเปลี่ยนใจ","ที่อยู่บนซองเลือนจนอ่านไม่ออก","ไม่มีแสตมป์ติด","ไปรษณีย์ปิดทำการ"], correct:1 },
+      { q:"ผู้เขียนจดหมายชื่ออะไร", options:["มะลิ","วิไล","สมหญิง","อำไพ"], correct:1 },
+      { q:"สุดท้ายสมชายพบผู้เขียนจดหมายอยู่ที่ใด", options:["บ้านพักคนชรา","ต่างจังหวัด","ต่างประเทศ","วัด"], correct:0 }
+    ]
+  },
+  {
+    key:"novel3", categoryKey:"novel", title:"ร้านหนังสือปลายซอย", color:"#63304A",
+    passage:"เอมชอบเดินลัดเลาะตามตรอกเล็ก ๆ หลังโรงเรียนเป็นประจำ จนวันหนึ่งเธอสังเกตเห็นร้านหนังสือเก่าที่ไม่เคยเห็นมาก่อน ป้ายหน้าร้านเขียนด้วยลายมือว่า 'ร้านหนังสือปลายซอย เปิดเฉพาะผู้ที่กำลังตามหาบางสิ่ง' เอมเดินเข้าไปด้วยความสงสัย พบชายชราใจดีนั่งอยู่หลังเคาน์เตอร์ไม้เก่า เขาถามเธอว่ากำลังตามหาอะไรอยู่ เอมตอบไปโดยไม่ทันคิดว่า 'หนูอยากรู้ว่าจะเก่งเลขได้ยังไง' ชายชรายิ้มแล้วหยิบหนังสือเล่มบาง ๆ สีฟ้าซีดจากชั้นด้านในสุดมาให้ ภายในเล่มไม่มีสูตรคณิตศาสตร์เลยสักบรรทัด มีเพียงเรื่องราวของเด็กที่ไม่ยอมแพ้ต่อโจทย์ยาก ๆ ทีละข้อจนเก่งขึ้นทุกวัน",
+    questions:[
+      { q:"เอมพบร้านหนังสือที่ใด", options:["ในห้างสรรพสินค้า","ตรอกเล็ก ๆ หลังโรงเรียน","ริมแม่น้ำ","สถานีรถไฟ"], correct:1 },
+      { q:"ป้ายหน้าร้านเขียนว่าร้านเปิดสำหรับใคร", options:["นักเรียนชั้นมัธยม","ผู้ที่กำลังตามหาบางสิ่ง","นักสะสมของเก่า","คนในหมู่บ้านเท่านั้น"], correct:1 },
+      { q:"ใครนั่งอยู่หลังเคาน์เตอร์ในร้าน", options:["เด็กหญิงคนหนึ่ง","ชายชราใจดี","หุ่นยนต์","ไม่มีใครเลย"], correct:1 },
+      { q:"เอมบอกว่าตัวเองอยากรู้เรื่องอะไร", options:["วิธีทำอาหาร","วิธีเก่งเลข","วิธีวาดรูป","วิธีว่ายน้ำ"], correct:1 },
+      { q:"หนังสือที่ชายชรายื่นให้มีเนื้อหาเกี่ยวกับอะไร", options:["สูตรคณิตศาสตร์ล้วน ๆ","เด็กที่ไม่ยอมแพ้ต่อโจทย์ยากจนเก่งขึ้น","ประวัติศาสตร์ร้านหนังสือ","นิทานสัตว์ป่า"], correct:1 }
+    ]
+  },
+  {
+    key:"insp1", categoryKey:"inspire", title:"ก้าวเล็ก ๆ ที่ไม่หยุดเดิน", color:"#1F6E5C",
+    passage:"หลายคนล้มเลิกความฝันไม่ใช่เพราะไม่มีความสามารถ แต่เพราะคาดหวังว่าความสำเร็จต้องมาไวและยิ่งใหญ่ตั้งแต่ก้าวแรก นักวิ่งมาราธอนทุกคนไม่ได้เริ่มจากการวิ่งสี่สิบกิโลเมตร แต่เริ่มจากการวิ่งรอบบ้านเพียงไม่กี่นาทีในแต่ละวัน สิ่งสำคัญไม่ใช่ก้าวที่ยาวที่สุด แต่คือก้าวที่สม่ำเสมอที่สุด เมื่อเราโฟกัสที่การทำสิ่งเล็ก ๆ ให้ดีขึ้นทีละนิดทุกวัน ผลลัพธ์ที่ยิ่งใหญ่จะค่อย ๆ ก่อตัวขึ้นเองโดยที่เราแทบไม่ทันสังเกต ความอดทนต่อความก้าวหน้าที่ดูช้าในวันนี้ คือรากฐานของความสำเร็จที่มั่นคงในวันข้างหน้า",
+    questions:[
+      { q:"ตามเนื้อหา คนส่วนใหญ่ล้มเลิกความฝันเพราะเหตุใด", options:["ไม่มีความสามารถ","คาดหวังความสำเร็จที่มาไวและยิ่งใหญ่ตั้งแต่แรก","ไม่มีเวลาว่าง","ขาดเงินทุน"], correct:1 },
+      { q:"เนื้อหายกตัวอย่างนักกีฬาประเภทใด", options:["นักว่ายน้ำ","นักวิ่งมาราธอน","นักปั่นจักรยาน","นักมวย"], correct:1 },
+      { q:"นักวิ่งมาราธอนเริ่มต้นจากอะไรตามเนื้อหา", options:["วิ่ง 40 กิโลเมตรทันที","วิ่งรอบบ้านไม่กี่นาทีต่อวัน","ฝึกในยิมหกชั่วโมง","ไม่ได้ฝึกเลย"], correct:1 },
+      { q:"สิ่งที่สำคัญที่สุดตามเนื้อหาคืออะไร", options:["ก้าวที่ยาวที่สุด","ก้าวที่สม่ำเสมอที่สุด","ก้าวที่เร็วที่สุด","ก้าวแรกเท่านั้น"], correct:1 },
+      { q:"ความอดทนต่อความก้าวหน้าที่ดูช้าในวันนี้ ตามเนื้อหาคือสิ่งใด", options:["ความสูญเปล่า","รากฐานของความสำเร็จในวันข้างหน้า","สัญญาณของความล้มเหลว","เรื่องที่ควรหลีกเลี่ยง"], correct:1 }
+    ]
+  },
+  {
+    key:"insp2", categoryKey:"inspire", title:"ล้มแล้วลุกไว", color:"#2E8069",
+    passage:"ต้นไม้ใหญ่ที่ยืนต้นทนพายุได้ไม่ใช่เพราะไม่เคยโดนลมแรงพัด แต่เพราะรากของมันหยั่งลึกลงไปทุกครั้งที่เผชิญกับแรงเสียดทาน คนที่ประสบความสำเร็จส่วนใหญ่ไม่ใช่คนที่ไม่เคยล้มเหลว แต่เป็นคนที่ลุกขึ้นเร็วกว่าคนอื่นหลังจากล้ม ความผิดพลาดแต่ละครั้งแท้จริงแล้วคือข้อมูลที่บอกเราว่าวิธีเดิมยังไม่ใช่คำตอบ ไม่ใช่คำตัดสินว่าเราไม่มีค่า เมื่อเปลี่ยนมุมมองจาก 'ฉันล้มเหลว' เป็น 'ฉันเพิ่งเรียนรู้อะไรบางอย่าง' ความกลัวที่จะเริ่มใหม่ก็จะค่อย ๆ จางลง และพื้นที่สำหรับความกล้าก็จะเข้ามาแทนที่",
+    questions:[
+      { q:"เนื้อหาเปรียบคนที่ประสบความสำเร็จกับสิ่งใด", options:["สายลม","ต้นไม้ใหญ่ที่รากหยั่งลึก","แม่น้ำที่ไหลเชี่ยว","ก้อนหินแข็ง"], correct:1 },
+      { q:"ตามเนื้อหา คนที่ประสบความสำเร็จส่วนใหญ่มีลักษณะอย่างไร", options:["ไม่เคยล้มเหลวเลย","ลุกขึ้นเร็วกว่าคนอื่นหลังจากล้ม","หลีกเลี่ยงความเสี่ยงทุกชนิด","ทำงานคนเดียวเสมอ"], correct:1 },
+      { q:"ความผิดพลาดแต่ละครั้งตามเนื้อหาคือสิ่งใด", options:["คำตัดสินว่าไม่มีค่า","ข้อมูลที่บอกว่าวิธีเดิมยังไม่ใช่คำตอบ","เรื่องที่ควรปิดบัง","จุดจบของความพยายาม"], correct:1 },
+      { q:"เนื้อหาแนะนำให้เปลี่ยนมุมมองจากอะไรเป็นอะไร", options:["จาก 'ฉันเก่ง' เป็น 'ฉันแย่'","จาก 'ฉันล้มเหลว' เป็น 'ฉันเพิ่งเรียนรู้อะไรบางอย่าง'","จาก 'ฉันทำได้' เป็น 'ฉันทำไม่ได้'","ไม่มีการเปลี่ยนมุมมองใด ๆ"], correct:1 },
+      { q:"เมื่อความกลัวจางลง เนื้อหาบอกว่าอะไรจะเข้ามาแทนที่", options:["ความสงสัย","ความกล้า","ความเกียจคร้าน","ความเหนื่อยล้า"], correct:1 }
+    ]
+  },
+  {
+    key:"insp3", categoryKey:"inspire", title:"พลังของความเชื่อมั่น", color:"#B4791F",
+    passage:"ก่อนที่คนอื่นจะเชื่อในตัวเรา เราต้องเป็นคนแรกที่เชื่อในตัวเองเสียก่อน ความเชื่อมั่นไม่ได้เกิดจากการรอให้ทุกอย่างพร้อมสมบูรณ์แบบ แต่เกิดจากการลงมือทำสิ่งเล็ก ๆ ซ้ำแล้วซ้ำเล่าจนเห็นผลด้วยตัวเอง ทุกครั้งที่เราทำในสิ่งที่เคยกลัวสำเร็จ แม้จะเป็นเรื่องเล็กน้อยเพียงใด สมองของเราจะบันทึกหลักฐานใหม่ว่า 'เราทำได้' และหลักฐานเหล่านั้นจะค่อย ๆ สะสมกลายเป็นความเชื่อมั่นที่แท้จริง ไม่ใช่ความมั่นใจปลอม ๆ ที่ปั้นแต่งขึ้นมาเพื่อให้คนอื่นเห็น",
+    questions:[
+      { q:"เนื้อหาบอกว่าใครควรเป็นคนแรกที่เชื่อในตัวเรา", options:["เพื่อนสนิท","ตัวเราเอง","ครอบครัว","หัวหน้างาน"], correct:1 },
+      { q:"ความเชื่อมั่นเกิดจากอะไรตามเนื้อหา", options:["การรอให้ทุกอย่างพร้อมสมบูรณ์แบบ","การลงมือทำสิ่งเล็ก ๆ ซ้ำ ๆ จนเห็นผล","การฟังคำชมจากผู้อื่น","การเปรียบเทียบตัวเองกับคนอื่น"], correct:1 },
+      { q:"เมื่อทำสิ่งที่เคยกลัวสำเร็จ สมองจะบันทึกอะไร", options:["ความล้มเหลว","หลักฐานว่า 'เราทำได้'","ความสงสัยในตัวเอง","ไม่มีการบันทึกใด ๆ"], correct:1 },
+      { q:"เนื้อหาแยกความเชื่อมั่นที่แท้จริงออกจากสิ่งใด", options:["ความมั่นใจปลอม ๆ ที่ปั้นแต่งเพื่อให้คนอื่นเห็น","ความสำเร็จของคนอื่น","ความรู้ทางวิชาการ","คำชมจากครู"], correct:0 },
+      { q:"ตามเนื้อหา ความเชื่อมั่นสะสมมาจากอะไร", options:["โชคชะตา","หลักฐานเล็ก ๆ ที่สะสมจากการลงมือทำ","การนอนหลับพักผ่อน","การรอคอยเวลาที่เหมาะสม"], correct:1 }
+    ]
+  }
+];
+
+const checkSvg = `<svg width="30" height="30" viewBox="0 0 24 24" fill="none"><path d="M5 13l4 4L19 7" stroke="#2A1D12" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/></svg>`;
+
+/* state[bookKey] = "done" | "unread" */
+let state = {};
+books.forEach(b => state[b.key] = "unread");
+
+/* attempts[bookKey] = number of FAILED tries so far this session */
+const MAX_ATTEMPTS = 3;
+let attempts = {};
+books.forEach(b => attempts[b.key] = 0);
+
+/* ---------------- Shelf decoration in header ---------------- */
+(function buildShelfDeco(){
+  const wrap = document.getElementById('shelfDeco');
+  const palette = books.map(b=>b.color);
+  for(let i=0;i<14;i++){
+    const s = document.createElement('div');
+    s.className = "spine";
+    s.style.height = (28 + (i % 4) * 7) + "px";
+    s.style.background = palette[i % palette.length];
+    wrap.appendChild(s);
+  }
+})();
+
+/* ---------------- Render library ---------------- */
+function render(){
+  const root = document.getElementById('libraryRoot');
+  root.innerHTML = "";
+
+  const doneCount = Object.values(state).filter(s=>s==="done").length;
+  document.getElementById('bookCountText').textContent = `อ่านแล้ว ${doneCount}/${books.length} เล่ม`;
+
+  categories.forEach(cat=>{
+    const catBooks = books.filter(b=>b.categoryKey === cat.key);
+    const catDone = catBooks.filter(b=> state[b.key] === "done").length;
+
+    const section = document.createElement('section');
+    section.className = "shelf-section";
+
+    const headerEl = document.createElement('div');
+    headerEl.className = "shelf-header";
+    headerEl.innerHTML = `
+      <div class="shelf-header-left">
+        <div class="shelf-icon-badge" style="background:${cat.badge}">
+          <svg class="shelf-icon" viewBox="0 0 24 24">${cat.icon}</svg>
+        </div>
+        <h2>${cat.title}</h2>
+      </div>
+      <div class="shelf-count">อ่านแล้ว ${catDone}/${catBooks.length} เล่ม</div>
+    `;
+    section.appendChild(headerEl);
+
+    const row = document.createElement('div');
+    row.className = "shelf-row";
+
+    catBooks.forEach(b=>{
+      const st = state[b.key];
+      const div = document.createElement('div');
+      div.className = `book ${st}`;
+      div.innerHTML = `
+        <div class="book-cover" style="background:${b.color}">
+          ${st === "done" ? `<div class="done-badge">${checkSvg.replace('width="30" height="30"','width="14" height="14"')}</div>` : ""}
+          <div class="book-cover-title">${b.title}</div>
+        </div>
+        <div class="book-title">${b.title}</div>
+        <div class="book-status">${st === "done" ? "อ่านแล้ว" : "ยังไม่ได้อ่าน"}</div>
+      `;
+      div.addEventListener('click', ()=> openModal(b.key));
+      row.appendChild(div);
+    });
+
+    section.appendChild(row);
+
+    const plank = document.createElement('div');
+    plank.className = "shelf-plank";
+    section.appendChild(plank);
+
+    root.appendChild(section);
+  });
+
+  fitCoverTitles();
+  renderRewards();
+}
+
+function renderRewards(){
+  const root = document.getElementById('rewardsSection');
+  root.innerHTML = "";
+
+  const headerEl = document.createElement('div');
+  headerEl.className = "rewards-header";
+  headerEl.innerHTML = `
+    <h2>แลกแต้มเป็นรางวัล</h2>
+    <div class="rewards-sub">แต้มของคุณตอนนี้ ${totalPoints} แต้ม</div>
+  `;
+  root.appendChild(headerEl);
+
+  const row = document.createElement('div');
+  row.className = "rewards-row";
+
+  rewards.forEach(r=>{
+    const affordable = totalPoints >= r.cost;
+    const card = document.createElement('div');
+    card.className = "reward-card";
+    card.innerHTML = `
+      <div class="reward-icon" style="background:${r.color}">
+        <svg viewBox="0 0 24 24">${r.icon}</svg>
+      </div>
+      <div class="reward-title">${r.title}</div>
+      <div class="reward-cost">${r.cost} แต้ม</div>
+      <button class="btn reward-btn" data-key="${r.key}" ${affordable ? "" : "disabled"}>แลกรางวัล</button>
+      ${affordable ? "" : `<div class="reward-lack">แต้มไม่พอ (ขาดอีก ${r.cost - totalPoints} แต้ม)</div>`}
+    `;
+    row.appendChild(card);
+  });
+
+  root.appendChild(row);
+
+  root.querySelectorAll('.reward-btn').forEach(btn=>{
+    btn.addEventListener('click', ()=> openRewardConfirm(btn.dataset.key));
+  });
+}
+
+function fitCoverTitles(){
+  document.querySelectorAll('.book-cover-title').forEach(el=>{
+    let fontSize = 14;
+    el.style.fontSize = fontSize + "px";
+    while(el.scrollWidth > el.clientWidth && fontSize > 8.5){
+      fontSize -= 0.5;
+      el.style.fontSize = fontSize + "px";
+    }
+  });
+  document.querySelectorAll('.book-title').forEach(el=>{
+    let fontSize = 13.5;
+    el.style.fontSize = fontSize + "px";
+    while(el.scrollWidth > el.clientWidth && fontSize > 8.5){
+      fontSize -= 0.5;
+      el.style.fontSize = fontSize + "px";
+    }
+  });
+}
+
+window.addEventListener('resize', ()=>{
+  clearTimeout(window._fitTitlesTimer);
+  window._fitTitlesTimer = setTimeout(fitCoverTitles, 150);
+});
+
+/* ---------------- Login & App Logic ---------------- */
+let currentBookKey = null;
+let userAnswers = [];
+let totalPoints = 0;
+let startTime = 0;
+
+let currentUserName = "";
+const AUTH_STORAGE_KEY = "hq_auth";
+
+async function doLogin(name, pass, opts={}){
+  const errorEl = document.getElementById('loginError');
+  const loginRes = await callSheetApi({ action:'login', name:name, pass:pass });
+
+  if(!loginRes || loginRes.status !== "ok"){
+    if(!opts.silent){
+      errorEl.textContent = (loginRes && loginRes.message) ? loginRes.message : "เข้าสู่ระบบไม่สำเร็จ กรุณาลองใหม่";
+      errorEl.style.display = "block";
+    }
+    localStorage.removeItem(AUTH_STORAGE_KEY);
+    return false;
+  }
+
+  currentUserName = name;
+  totalPoints = loginRes.totalPoints || 0;
+
+  /* progress from the sheet: an array of indices into the flattened
+     "books" array above, matching the previous zone-based format */
+  const doneIndices = loginRes.progress || [];
+  books.forEach((b, i) => { state[b.key] = doneIndices.includes(i) ? "done" : "unread"; });
+
+  localStorage.setItem(AUTH_STORAGE_KEY, JSON.stringify({ name, pass }));
+
+  document.getElementById('loginScreen').style.display = "none";
+  document.getElementById('appContent').style.display = "block";
+  document.getElementById('greetingText').innerHTML = `ยินดีต้อนรับ นักอ่าน <strong>${name}</strong> <span class="logout-link" onclick="logoutUser()">ออกจากระบบ</span>`;
+  document.getElementById('pointsText').textContent = totalPoints;
+
+  await loadRemoteContent();
+  render();
+  return true;
+}
+
+function logoutUser(){
+  localStorage.removeItem(AUTH_STORAGE_KEY);
+  location.reload();
+}
+
+document.getElementById('loginForm').addEventListener('submit', async (e)=>{
+  e.preventDefault();
+  const name = document.getElementById('loginName').value.trim();
+  const pass = document.getElementById('loginPass').value.trim();
+  const errorEl = document.getElementById('loginError');
+  const submitBtnEl = e.target.querySelector('button[type="submit"]');
+
+  if(!name || !pass){
+    errorEl.textContent = "กรุณากรอกชื่อนักอ่านและรหัสผ่าน";
+    errorEl.style.display = "block";
+    return;
+  }
+  errorEl.style.display = "none";
+
+  if(submitBtnEl){ submitBtnEl.disabled = true; submitBtnEl.textContent = "กำลังเข้าสู่ระบบ..."; }
+  await doLogin(name, pass);
+  if(submitBtnEl){ submitBtnEl.disabled = false; submitBtnEl.textContent = "เข้าสู่ระบบ"; }
+});
+
+(async function tryAutoLogin(){
+  const saved = localStorage.getItem(AUTH_STORAGE_KEY);
+  if(!saved) return;
+  try{
+    const { name, pass } = JSON.parse(saved);
+    if(name && pass){
+      document.getElementById('loginName').value = name;
+      await doLogin(name, pass, { silent:true });
+    }
+  }catch(err){
+    localStorage.removeItem(AUTH_STORAGE_KEY);
+  }
+})();
+
+function openModal(bookKey){
+  clearTimeout(window._autoExitTimer);
+  currentBookKey = bookKey;
+  const b = books.find(x=>x.key === bookKey);
+  const cat = categories.find(c=>c.key === b.categoryKey);
+  document.getElementById('readyZoneTag').textContent = cat.title;
+  document.getElementById('readyTitle').textContent = b.title;
+
+  const isDone = state[b.key] === "done";
+  const usedAttempts = attempts[b.key];
+  const exhausted = !isDone && usedAttempts >= MAX_ATTEMPTS;
+
+  const readyDesc = document.getElementById('readyDesc');
+  const attemptNote = document.getElementById('attemptNote');
+  const startBtn = document.getElementById('startBtn');
+
+  if(exhausted){
+    readyDesc.textContent = "คุณทำแบบทดสอบเรื่องนี้ครบ 3 ครั้งแล้วแต่ยังไม่ผ่าน กรุณาเลือกอ่านหนังสือเล่มอื่นก่อน";
+    attemptNote.textContent = "";
+    attemptNote.className = "attempt-note";
+    startBtn.style.display = "none";
+  } else {
+    readyDesc.textContent = "ท่านพร้อมที่จะตอบคำถามเราหรือไม่ ? เมื่อเริ่มแล้วจะมีคำถามทั้งหมด 5 ข้อ";
+    if(!isDone){
+      attemptNote.textContent = `ทำแบบทดสอบได้ทั้งหมด ${MAX_ATTEMPTS} ครั้ง (ใช้ไปแล้ว ${usedAttempts} ครั้ง)`;
+      attemptNote.className = "attempt-note";
+    } else {
+      attemptNote.textContent = "";
+    }
+    startBtn.style.display = "inline-block";
+  }
+
+  document.getElementById('modalReady').style.display = "block";
+  document.getElementById('modalQuiz').style.display = "none";
+  document.getElementById('modalResult').style.display = "none";
+  document.getElementById('modalRewardConfirm').style.display = "none";
+  document.getElementById('modalRewardDone').style.display = "none";
+  document.getElementById('overlay').classList.add('show');
+}
+
+document.getElementById('closeReady').addEventListener('click', ()=>{
+  document.getElementById('overlay').classList.remove('show');
+});
+
+document.getElementById('startBtn').addEventListener('click', ()=>{
+  document.getElementById('modalReady').style.display = "none";
+  document.getElementById('modalQuiz').style.display = "block";
+  startQuiz();
+});
+
+function startQuiz(){
+  const b = books.find(x=>x.key === currentBookKey);
+  const cat = categories.find(c=>c.key === b.categoryKey);
+  document.getElementById('quizZoneTag').textContent = `${cat.title} • ${b.title}`;
+  document.getElementById('quizTitle').textContent = b.title;
+  document.getElementById('passageBox').textContent = b.passage;
+
+  const attemptNo = attempts[b.key] + 1;
+  document.getElementById('quizAttemptNote').textContent = `ครั้งที่ ${attemptNo} จาก ${MAX_ATTEMPTS}`;
+
+  userAnswers = new Array(b.questions.length).fill(null);
+  renderQuestions();
+  startTime = Date.now();
+}
+
+function renderQuestions(){
+  const b = books.find(x=>x.key === currentBookKey);
+  const qWrap = document.getElementById('questionsWrap');
+  qWrap.innerHTML = "";
+
+  b.questions.forEach((q, qIdx)=>{
+    const block = document.createElement('div');
+    block.className = "question-block";
+
+    let optionsHtml = q.options.map((opt, oIdx)=>{
+      const checked = userAnswers[qIdx] === oIdx ? "checked" : "";
+      const selectedClass = userAnswers[qIdx] === oIdx ? "selected" : "";
+      return `
+        <label class="option-row ${selectedClass}">
+          <input type="radio" name="q_${qIdx}" value="${oIdx}" ${checked} onchange="selectOption(${qIdx}, ${oIdx})">
+          <span>${opt}</span>
+        </label>
+      `;
+    }).join('');
+
+    block.innerHTML = `
+      <div class="q-text"><span class="q-num">${qIdx+1}.</span> ${q.q}</div>
+      ${optionsHtml}
+    `;
+    qWrap.appendChild(block);
+  });
+
+  updateQuizProgress();
+}
+
+function selectOption(qIdx, oIdx){
+  userAnswers[qIdx] = oIdx;
+  renderQuestions();
+}
+
+function updateQuizProgress(){
+  const answered = userAnswers.filter(a => a !== null).length;
+  const total = userAnswers.length;
+  document.getElementById('quizProgress').textContent = `ตอบแล้ว ${answered}/${total} ข้อ`;
+  document.getElementById('submitBtn').disabled = answered < total;
+}
+
+document.getElementById('submitBtn').addEventListener('click', async ()=>{
+  const elapsedSeconds = Math.floor((Date.now() - startTime) / 1000);
+  const mins = String(Math.floor(elapsedSeconds / 60)).padStart(2, '0');
+  const secs = String(elapsedSeconds % 60).padStart(2, '0');
+  const timeStr = `${mins}:${secs}`;
+
+  const b = books.find(x=>x.key === currentBookKey);
+  const bookIdx = books.findIndex(x=>x.key === currentBookKey);
+  let score = 0;
+  const reviewList = document.getElementById('reviewList');
+  reviewList.innerHTML = "";
+
+  b.questions.forEach((q, i)=>{
+    const isCorrect = userAnswers[i] === q.correct;
+    if(isCorrect) score++;
+
+    const li = document.createElement('li');
+    li.className = isCorrect ? "right" : "wrong";
+    li.innerHTML = `<strong>ข้อ ${i+1}:</strong> ${isCorrect ? "ถูกต้อง" : "ไม่ถูกต้อง (เฉลย: " + q.options[q.correct] + ")"}`;
+    reviewList.appendChild(li);
+  });
+
+  document.getElementById('resultScore').textContent = `${score}/${b.questions.length}`;
+  document.getElementById('resultTime').textContent = timeStr;
+
+  let level = "ปรับปรุง";
+  if(score === b.questions.length) level = "ดีเยี่ยม";
+  else if(score >= Math.ceil(b.questions.length * 0.6)) level = "ปานกลาง";
+  document.getElementById('resultLevel').textContent = level;
+
+  document.getElementById('modalQuiz').style.display = "none";
+  document.getElementById('modalResult').style.display = "block";
+
+  const passed = score === b.questions.length;
+  const alreadyDone = state[b.key] === "done";
+  const earnedPoints = (passed && !alreadyDone) ? 10 : 0;
+
+  const saveRes = await callSheetApi({
+    action: 'saveResult',
+    name: currentUserName,
+    zoneIdx: bookIdx,
+    zoneKey: b.key,
+    score: score,
+    total: b.questions.length,
+    time: timeStr,
+    points: earnedPoints,
+    passed: passed
+  });
+
+  if(saveRes && saveRes.status === "ok"){
+    totalPoints = saveRes.totalPoints;
+  } else if(earnedPoints > 0){
+    totalPoints += earnedPoints;
+  }
+
+  if(passed){
+    document.getElementById('resultTitle').textContent = "ผ่านด่านสำเร็จ!";
+    document.getElementById('resultNote').style.display = "none";
+    const cBtnPass = document.getElementById('continueBtn');
+    cBtnPass.textContent = "ไปต่อ";
+    cBtnPass.style.display = "block";
+    document.getElementById('retryBtn').style.display = "none";
+
+    state[b.key] = "done";
+    document.getElementById('pointsText').textContent = totalPoints;
+    if(earnedPoints > 0){
+      showToast(`+${earnedPoints} แต้ม`);
+    }
+  } else {
+    attempts[b.key] = (attempts[b.key] || 0) + 1;
+    const remaining = MAX_ATTEMPTS - attempts[b.key];
+    const exhausted = remaining <= 0;
+
+    if(exhausted){
+      document.getElementById('resultTitle').textContent = "ไม่ผ่าน ครบ 3 ครั้งแล้ว";
+      document.getElementById('resultNote').textContent = "คุณทำแบบทดสอบเรื่องนี้ครบ 3 ครั้งแล้วแต่ยังไม่ผ่าน ระบบจะพากลับไปหน้าหมวดหมู่หนังสือให้เลือกเล่มใหม่";
+      document.getElementById('resultNote').style.display = "block";
+      document.getElementById('retryBtn').style.display = "none";
+      const cBtn = document.getElementById('continueBtn');
+      cBtn.textContent = "กลับไปหน้าหมวดหมู่หนังสือ";
+      cBtn.style.display = "block";
+
+      showToast("ครบ 3 ครั้งแล้ว กรุณาเลือกหนังสือเล่มใหม่");
+
+      clearTimeout(window._autoExitTimer);
+      window._autoExitTimer = setTimeout(()=>{
+        document.getElementById('overlay').classList.remove('show');
+      }, 2500);
+    } else {
+      document.getElementById('resultTitle').textContent = "ยังไม่ผ่านด่าน";
+      document.getElementById('resultNote').textContent = `คุณต้องตอบถูกครบทุกข้อจึงจะผ่านด่านนี้ (เหลือโอกาสอีก ${remaining} ครั้ง)`;
+      document.getElementById('resultNote').style.display = "block";
+      document.getElementById('continueBtn').style.display = "none";
+      const rBtn = document.getElementById('retryBtn');
+      rBtn.textContent = "ลองใหม่";
+      rBtn.style.display = "block";
+    }
+  }
+
+  render();
+});
+
+document.getElementById('continueBtn').addEventListener('click', ()=>{
+  clearTimeout(window._autoExitTimer);
+  document.getElementById('overlay').classList.remove('show');
+});
+
+document.getElementById('retryBtn').addEventListener('click', ()=>{
+  document.getElementById('modalResult').style.display = "none";
+  document.getElementById('modalQuiz').style.display = "block";
+  startQuiz();
+});
+
+/* ---------------- Reward redemption ---------------- */
+let pendingRewardKey = null;
+
+function openRewardConfirm(rewardKey){
+  const r = rewards.find(x=>x.key === rewardKey);
+  if(!r) return;
+  if(totalPoints < r.cost){
+    renderRewards();
+    return;
+  }
+  clearTimeout(window._autoExitTimer);
+  pendingRewardKey = rewardKey;
+
+  document.getElementById('rewardConfirmTitle').textContent = r.title;
+  document.getElementById('rewardConfirmDesc').textContent =
+    `ยืนยันแลกรางวัลนี้ด้วย ${r.cost} แต้มหรือไม่ ? แต้มของคุณจะเหลือ ${totalPoints - r.cost} แต้ม`;
+
+  document.getElementById('modalReady').style.display = "none";
+  document.getElementById('modalQuiz').style.display = "none";
+  document.getElementById('modalResult').style.display = "none";
+  document.getElementById('modalRewardDone').style.display = "none";
+  document.getElementById('modalRewardConfirm').style.display = "block";
+  document.getElementById('overlay').classList.add('show');
+}
+
+document.getElementById('rewardCancelBtn').addEventListener('click', ()=>{
+  pendingRewardKey = null;
+  document.getElementById('overlay').classList.remove('show');
+});
+
+document.getElementById('rewardConfirmBtn').addEventListener('click', async ()=>{
+  const r = rewards.find(x=>x.key === pendingRewardKey);
+  if(!r) return;
+
+  if(totalPoints < r.cost){
+    document.getElementById('overlay').classList.remove('show');
+    renderRewards();
+    return;
+  }
+
+  const btn = document.getElementById('rewardConfirmBtn');
+  btn.disabled = true;
+  btn.textContent = "กำลังแลกรางวัล...";
+
+  const saveRes = await callSheetApi({
+    action: 'redeemReward',
+    name: currentUserName,
+    rewardKey: r.key,
+    rewardTitle: r.title,
+    cost: r.cost
+  });
+
+  btn.disabled = false;
+  btn.textContent = "ยืนยันแลกรางวัล";
+
+  /* backend explicitly rejected the redemption (e.g. not enough points after
+     all - someone else redeemed on another device first) - don't touch
+     points, just tell the reader and let them try a smaller reward */
+  if(saveRes && saveRes.status === "error"){
+    if(typeof saveRes.totalPoints === "number"){
+      totalPoints = saveRes.totalPoints;
+      document.getElementById('pointsText').textContent = totalPoints;
+    }
+    document.getElementById('overlay').classList.remove('show');
+    showToast(saveRes.message || "แลกรางวัลไม่สำเร็จ");
+    pendingRewardKey = null;
+    renderRewards();
+    return;
+  }
+
+  if(saveRes && saveRes.status === "ok" && typeof saveRes.totalPoints === "number"){
+    totalPoints = saveRes.totalPoints;
+  } else {
+    /* backend not reachable / not wired up yet - still deduct locally so the UI works */
+    totalPoints -= r.cost;
+  }
+
+  document.getElementById('pointsText').textContent = totalPoints;
+
+  document.getElementById('rewardDoneTitle').textContent = "ยินดีด้วย !";
+  document.getElementById('rewardDoneDesc').textContent = `คุณแลก "${r.title}" เรียบร้อยแล้ว (-${r.cost} แต้ม)`;
+
+  document.getElementById('modalRewardConfirm').style.display = "none";
+  document.getElementById('modalRewardDone').style.display = "block";
+
+  showToast(`-${r.cost} แต้ม แลก${r.title}สำเร็จ`);
+
+  pendingRewardKey = null;
+  renderRewards();
+});
+
+document.getElementById('rewardDoneBtn').addEventListener('click', ()=>{
+  document.getElementById('overlay').classList.remove('show');
+});
+
+function showToast(text){
+  const toast = document.getElementById('pointsToast');
+  toast.textContent = text;
+  toast.classList.add('show');
+  setTimeout(()=>{
+    toast.classList.remove('show');
+  }, 2000);
+}
+
+render();
+</script>
+</body>
+</html>
