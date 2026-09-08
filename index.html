@@ -1490,7 +1490,7 @@ document.getElementById('submitBtn').addEventListener('click', async ()=>{
 
     const li = document.createElement('li');
     li.className = isCorrect ? "right" : "wrong";
-    li.innerHTML = `<strong>ข้อ ${i+1}:</strong> ${isCorrect ? "ถูกต้อง" : "ไม่ถูกต้อง (เฉลย: " + q.options[q.correct] + ")"}`;
+    li.innerHTML = `<strong>ข้อ ${i+1}:</strong> ${isCorrect ? "ถูกต้อง" : "ไม่ถูกต้อง"}`;
     reviewList.appendChild(li);
   });
 
