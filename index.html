@@ -247,6 +247,27 @@
     margin-left:2px;
   }
 
+  .header-nav{
+    margin-top:16px;
+  }
+  .nav-btn{
+    display:inline-flex;
+    align-items:center;
+    gap:6px;
+    padding:10px 20px;
+    border-radius:999px;
+    border:1px solid rgba(224,181,99,0.5);
+    background:rgba(255,255,255,0.06);
+    color:var(--cream);
+    font-family:'Sarabun', sans-serif;
+    font-size:13.5px;
+    font-weight:600;
+    cursor:pointer;
+    transition:background 0.15s ease, transform 0.1s ease;
+  }
+  .nav-btn:hover{ background:rgba(255,255,255,0.14); }
+  .nav-btn:active{ transform:scale(0.97); }
+
   .points-toast{
     position:fixed;
     top:20px;
@@ -298,6 +319,24 @@
     color:var(--ink-soft);
     font-weight:600;
   }
+  .rewards-header-right{
+    display:flex;
+    align-items:center;
+    gap:14px;
+    flex-wrap:wrap;
+  }
+  .history-link{
+    background:none;
+    border:none;
+    padding:0;
+    font-family:'Sarabun', sans-serif;
+    font-size:12.5px;
+    font-weight:600;
+    color:var(--brass);
+    text-decoration:underline;
+    cursor:pointer;
+  }
+  .history-link:hover{ color:var(--brass-bright); }
   .rewards-row{
     display:grid;
     grid-template-columns:repeat(auto-fit, minmax(200px, 1fr));
@@ -677,6 +716,44 @@
   .review-list li.right{ background:rgba(47,93,78,0.12); color:#2F5D4E; }
   .review-list li.wrong{ background:rgba(163,55,42,0.1); color:#A3372A; }
 
+  .history-list{
+    text-align:left;
+    margin:0 0 22px;
+    padding:0;
+    list-style:none;
+    max-height:320px;
+    overflow-y:auto;
+  }
+  .history-list li{
+    display:flex;
+    align-items:baseline;
+    justify-content:space-between;
+    gap:10px;
+    font-size:13px;
+    line-height:1.6;
+    padding:10px 12px;
+    border-radius:4px;
+    margin-bottom:6px;
+    background:rgba(255,255,255,0.45);
+    border:1px solid rgba(36,48,31,0.12);
+  }
+  .history-list .h-left{ display:flex; flex-direction:column; gap:2px; }
+  .history-list .h-title{ font-weight:600; color:var(--ink); }
+  .history-list .h-date{ font-size:11px; color:var(--ink-soft); }
+  .history-list .h-cost{ font-weight:700; color:#A3372A; white-space:nowrap; }
+  .history-empty{
+    font-size:13.5px;
+    color:var(--ink-soft);
+    text-align:center;
+    padding:20px 0;
+  }
+  .history-loading{
+    font-size:13.5px;
+    color:var(--ink-soft);
+    text-align:center;
+    padding:20px 0;
+  }
+
   @media (max-width:480px){
     .shelf-row{ gap:12px; }
     .book, .book-cover{ width:100px; }
@@ -725,17 +802,25 @@
     <div class="shelf-deco" id="shelfDeco"></div>
     <div class="eyebrow-line"></div>
     <h1>ห้องสมุดนักอ่าน</h1>
-    <p class="sub">เลือกอ่านเรื่องไหนก่อนก็ได้ ทุกหมวดหมู่เปิดให้อ่านพร้อมกัน ทำแบบทดสอบท้ายเรื่องให้ถูกครบเพื่อรับแต้ม</p>
+    <p class="sub" id="headerSub">เลือกอ่านเรื่องไหนก่อนก็ได้ ทุกหมวดหมู่เปิดให้อ่านพร้อมกัน ทำแบบทดสอบท้ายเรื่องให้ถูกครบเพื่อรับแต้ม</p>
     <div class="greeting" id="greetingText"></div>
     <div class="points-pill">
       <span id="pointsText">0</span> แต้ม
       <span class="book-count" id="bookCountText">อ่านแล้ว 0/0 เล่ม</span>
     </div>
+    <div class="header-nav">
+      <button class="nav-btn" id="navToRewardsBtn" type="button">🎁 แลกแต้มเป็นรางวัล</button>
+      <button class="nav-btn" id="navToLibraryBtn" type="button" style="display:none;">📚 กลับไปหน้าอ่านหนังสือ</button>
+    </div>
   </header>
 
-  <div class="rewards-section" id="rewardsSection"></div>
+  <div class="page" id="pageLibrary">
+    <div class="library" id="libraryRoot"></div>
+  </div>
 
-  <div class="library" id="libraryRoot"></div>
+  <div class="page" id="pageRewards" style="display:none;">
+    <div class="rewards-section" id="rewardsSection"></div>
+  </div>
 
   <footer class="site-footer">
     <div class="org-line">ศูนย์ส่งเสริมการเรียนรู้ระดับอำเภอเทิง</div>
@@ -793,6 +878,15 @@
     <p id="rewardDoneDesc">คุณแลกรางวัลขนาดใหญ่เรียบร้อยแล้ว</p>
     <button class="btn" id="rewardDoneBtn">ปิด</button>
   </div>
+
+  <div class="modal wide" id="modalHistory" style="display:none;">
+    <div class="zone-tag">ประวัติการแลกแต้ม</div>
+    <h2 style="margin-bottom:16px;">ประวัติการแลกแต้มของฉัน</h2>
+    <div id="historyContent">
+      <div class="history-loading">กำลังโหลดข้อมูล...</div>
+    </div>
+    <button class="btn secondary" id="historyCloseBtn">ปิด</button>
+  </div>
 </div>
 
 <script>
@@ -808,7 +902,7 @@
    thonburi / rattanakosin_early / rattanakosin_modern keep working unchanged since
    those five keep the same keys and the same order (indices 0-4).
 
-   - redeemReward (NEW): { action:'redeemReward', name, rewardKey, rewardTitle, cost }
+   - redeemReward: { action:'redeemReward', name, rewardKey, rewardTitle, cost }
      -> { status:'ok', totalPoints, redeemedPoints }
      Sent when the reader spends points on a reward. The sheet should keep at
      least two running columns per user: "แต้มรวม" (their totalPoints, going
@@ -818,6 +912,12 @@
      is shown as a small stat. If the backend call fails, the app falls back
      to deducting `cost` from the points shown locally so the UI still works,
      but nothing is durably saved until the sheet is wired up.
+
+   - getRedemptions (NEW): { action:'getRedemptions', name }
+     -> { status:'ok', redemptions:[{ rewardTitle, cost, timestamp, totalPointsAfter }, ...] }
+     Reads back this reader's own row(s) from the "Redemptions" log sheet the
+     backend writes to on every redeemReward call, newest first. Used by the
+     "ดูประวัติการแลกแต้ม" (view redemption history) button.
 =================================================================== */
 const CONFIG = {
   SHEET_API_URL: "https://script.google.com/macros/s/AKfycbyNESQfal_WjAIm6LPwWwOpns_wawfMvC5uKDxM6V1oeqSKngg8ju8RbghfvjDmwt_RJg/exec"
@@ -1108,9 +1208,14 @@ function renderRewards(){
   headerEl.className = "rewards-header";
   headerEl.innerHTML = `
     <h2>แลกแต้มเป็นรางวัล</h2>
-    <div class="rewards-sub">แต้มของคุณตอนนี้ ${totalPoints} แต้ม</div>
+    <div class="rewards-header-right">
+      <div class="rewards-sub">แต้มของคุณตอนนี้ ${totalPoints} แต้ม</div>
+      <button class="history-link" id="historyLinkBtn" type="button">ดูประวัติการแลกแต้ม</button>
+    </div>
   `;
   root.appendChild(headerEl);
+
+  document.getElementById('historyLinkBtn').addEventListener('click', openRedemptionHistory);
 
   const row = document.createElement('div');
   row.className = "rewards-row";
@@ -1161,6 +1266,23 @@ window.addEventListener('resize', ()=>{
   clearTimeout(window._fitTitlesTimer);
   window._fitTitlesTimer = setTimeout(fitCoverTitles, 150);
 });
+
+/* ---------------- Page switching (library <-> rewards) ---------------- */
+const LIBRARY_SUB = "เลือกอ่านเรื่องไหนก่อนก็ได้ ทุกหมวดหมู่เปิดให้อ่านพร้อมกัน ทำแบบทดสอบท้ายเรื่องให้ถูกครบเพื่อรับแต้ม";
+const REWARDS_SUB = "นำแต้มที่สะสมได้จากการอ่านมาแลกเป็นรางวัล และดูประวัติการแลกแต้มของคุณ";
+
+function showPage(page){
+  const isRewards = page === "rewards";
+  document.getElementById('pageLibrary').style.display = isRewards ? "none" : "block";
+  document.getElementById('pageRewards').style.display = isRewards ? "block" : "none";
+  document.getElementById('navToRewardsBtn').style.display = isRewards ? "none" : "inline-flex";
+  document.getElementById('navToLibraryBtn').style.display = isRewards ? "inline-flex" : "none";
+  document.getElementById('headerSub').textContent = isRewards ? REWARDS_SUB : LIBRARY_SUB;
+  window.scrollTo({ top:0, behavior:"smooth" });
+}
+
+document.getElementById('navToRewardsBtn').addEventListener('click', ()=> showPage('rewards'));
+document.getElementById('navToLibraryBtn').addEventListener('click', ()=> showPage('library'));
 
 /* ---------------- Login & App Logic ---------------- */
 let currentBookKey = null;
@@ -1279,6 +1401,7 @@ function openModal(bookKey){
   document.getElementById('modalResult').style.display = "none";
   document.getElementById('modalRewardConfirm').style.display = "none";
   document.getElementById('modalRewardDone').style.display = "none";
+  document.getElementById('modalHistory').style.display = "none";
   document.getElementById('overlay').classList.add('show');
 }
 
@@ -1483,6 +1606,7 @@ function openRewardConfirm(rewardKey){
   document.getElementById('modalQuiz').style.display = "none";
   document.getElementById('modalResult').style.display = "none";
   document.getElementById('modalRewardDone').style.display = "none";
+  document.getElementById('modalHistory').style.display = "none";
   document.getElementById('modalRewardConfirm').style.display = "block";
   document.getElementById('overlay').classList.add('show');
 }
@@ -1554,6 +1678,56 @@ document.getElementById('rewardConfirmBtn').addEventListener('click', async ()=>
 });
 
 document.getElementById('rewardDoneBtn').addEventListener('click', ()=>{
+  document.getElementById('overlay').classList.remove('show');
+});
+
+/* ---------------- Redemption history ---------------- */
+async function openRedemptionHistory(){
+  clearTimeout(window._autoExitTimer);
+
+  document.getElementById('modalReady').style.display = "none";
+  document.getElementById('modalQuiz').style.display = "none";
+  document.getElementById('modalResult').style.display = "none";
+  document.getElementById('modalRewardConfirm').style.display = "none";
+  document.getElementById('modalRewardDone').style.display = "none";
+  document.getElementById('modalHistory').style.display = "block";
+  document.getElementById('overlay').classList.add('show');
+
+  const contentEl = document.getElementById('historyContent');
+  contentEl.innerHTML = `<div class="history-loading">กำลังโหลดข้อมูล...</div>`;
+
+  const res = await callSheetApi({ action:'getRedemptions', name: currentUserName });
+
+  if(!res || res.status !== "ok" || !Array.isArray(res.redemptions)){
+    contentEl.innerHTML = `<div class="history-empty">ไม่สามารถโหลดประวัติได้ในขณะนี้</div>`;
+    return;
+  }
+
+  if(res.redemptions.length === 0){
+    contentEl.innerHTML = `<div class="history-empty">ยังไม่มีประวัติการแลกแต้ม</div>`;
+    return;
+  }
+
+  const list = document.createElement('ul');
+  list.className = "history-list";
+
+  res.redemptions.forEach(item=>{
+    const li = document.createElement('li');
+    li.innerHTML = `
+      <div class="h-left">
+        <span class="h-title">${item.rewardTitle || "-"}</span>
+        <span class="h-date">${item.timestamp || ""}</span>
+      </div>
+      <span class="h-cost">-${item.cost} แต้ม</span>
+    `;
+    list.appendChild(li);
+  });
+
+  contentEl.innerHTML = "";
+  contentEl.appendChild(list);
+}
+
+document.getElementById('historyCloseBtn').addEventListener('click', ()=>{
   document.getElementById('overlay').classList.remove('show');
 });
 
