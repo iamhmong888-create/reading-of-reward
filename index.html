@@ -889,59 +889,72 @@
   </div>
 </div>
 
+<!-- Firebase (compat build - works with plain <script>, no bundler needed) -->
+<script src="https://www.gstatic.com/firebasejs/10.13.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.13.0/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.13.0/firebase-firestore-compat.js"></script>
+
 <script>
 /* ===================================================================
-   CONFIG - Google Sheet backend
-   Wire format kept IDENTICAL to the previous version, plus one new action:
-   - login: { action:'login', name, pass } -> { status, message, totalPoints, progress:[indices] }
-   - getContent: { action:'getContent' } -> { status, zones:[{key,title,passage,questions}] }
-   - saveResult: { action:'saveResult', name, zoneIdx, zoneKey, score, total, time, points, passed }
-   "zoneIdx" is this book's position in the flattened BOOKS array below (categories
-   are just a display grouping; the underlying list order is fixed), and "zoneKey"
-   is the book's unique key. Existing rows in the sheet for sukhothai / ayutthaya /
-   thonburi / rattanakosin_early / rattanakosin_modern keep working unchanged since
-   those five keep the same keys and the same order (indices 0-4).
+   CONFIG - Firebase backend
+   Replaced the old Google Apps Script / Sheet API with Firebase
+   (Authentication + Firestore). Paste your own project's config below -
+   you get this block from: Firebase Console -> Project settings ->
+   General -> "Your apps" -> Web app -> SDK setup and configuration.
 
-   - redeemReward: { action:'redeemReward', name, rewardKey, rewardTitle, cost }
-     -> { status:'ok', totalPoints, redeemedPoints }
-     Sent when the reader spends points on a reward. The sheet should keep at
-     least two running columns per user: "แต้มรวม" (their totalPoints, going
-     down after a redemption) and "แต้มแลก" (a running sum of all points ever
-     redeemed, going up by `cost` each time). The response's totalPoints
-     becomes the new source of truth on screen; redeemedPoints (if returned)
-     is shown as a small stat. If the backend call fails, the app falls back
-     to deducting `cost` from the points shown locally so the UI still works,
-     but nothing is durably saved until the sheet is wired up.
+   Data model in Firestore:
+   - users/{uid}
+       name: string
+       totalPoints: number
+       progress: { [bookKey]: true }        // true = quiz passed
+       createdAt: server timestamp
+     users/{uid}/redemptions/{autoId}
+       rewardTitle, cost, timestamp (server timestamp), totalPointsAfter
 
-   - getRedemptions (NEW): { action:'getRedemptions', name }
-     -> { status:'ok', redemptions:[{ rewardTitle, cost, timestamp, totalPointsAfter }, ...] }
-     Reads back this reader's own row(s) from the "Redemptions" log sheet the
-     backend writes to on every redeemReward call, newest first. Used by the
-     "ดูประวัติการแลกแต้ม" (view redemption history) button.
+   - content/{bookKey}   (OPTIONAL - only needed if you still want to be
+     able to edit a book's title/passage/questions without touching code)
+       title, passage, questions: [{ q, options, correct }]
+
+   Auth strategy: the original login screen only asks for "ชื่อนักอ่าน"
+   (name) + "รหัสผ่าน" (password), with auto-registration on first login.
+   Firebase Authentication needs an email, so we derive a fake, stable
+   email from the name (name -> "<slug>@readapp.local") and use Firebase
+   Email/Password auth underneath. This keeps the exact same login UX
+   the readers already know, while getting real auth (hashed passwords,
+   rate limiting, etc.) for free instead of storing plaintext passwords.
 =================================================================== */
-const CONFIG = {
-  SHEET_API_URL: "https://script.google.com/macros/s/AKfycbyNESQfal_WjAIm6LPwWwOpns_wawfMvC5uKDxM6V1oeqSKngg8ju8RbghfvjDmwt_RJg/exec"
+const firebaseConfig = {
+  apiKey: "AIzaSyBkju0vdLKy_uS2qGDUH_-dCrnMn8Hp7u8",
+  authDomain: "reading-of-reward.firebaseapp.com",
+  projectId: "reading-of-reward",
+  storageBucket: "reading-of-reward.firebasestorage.app",
+  messagingSenderId: "985819630807",
+  appId: "1:985819630807:web:525e1fe75b8086501c3492"
 };
 
-async function callSheetApi(params){
-  if(!CONFIG.SHEET_API_URL) return null;
-  try{
-    const url = new URL(CONFIG.SHEET_API_URL);
-    Object.keys(params).forEach(k => url.searchParams.set(k, params[k]));
-    const res = await fetch(url.toString());
-    return await res.json();
-  }catch(err){
-    console.warn("Sheet API error:", err);
-    return null;
-  }
+firebase.initializeApp(firebaseConfig);
+const auth = firebase.auth();
+const db = firebase.firestore();
+
+/* Two names can collide once "cleaned up" into an email-safe slug (e.g.
+   spaces/Thai punctuation stripped). We append a short hash of the raw
+   name so different display names practically never collide, while the
+   same name always maps back to the same email. */
+function nameToEmail(name){
+  const clean = name.trim().toLowerCase().replace(/[^a-z0-9ก-๙]+/g, "");
+  let hash = 0;
+  for(let i=0;i<name.length;i++){ hash = (hash*31 + name.charCodeAt(i)) >>> 0; }
+  return `${encodeURIComponent(clean || "reader")}-${hash.toString(36)}@readapp.local`;
 }
 
+let currentUserDocRef = null;
+
 async function loadRemoteContent(){
-  if(!CONFIG.SHEET_API_URL) return;
-  const res = await callSheetApi({ action:'getContent' });
-  if(res && res.status === "ok" && Array.isArray(res.zones)){
-    res.zones.forEach(rz=>{
-      const b = books.find(bb=> bb.key === rz.key);
+  try{
+    const snap = await db.collection('content').get();
+    snap.forEach(doc=>{
+      const rz = doc.data();
+      const b = books.find(bb=> bb.key === doc.id);
       if(!b) return;
       if(rz.title) b.title = rz.title;
       if(rz.passage) b.passage = rz.passage;
@@ -950,6 +963,8 @@ async function loadRemoteContent(){
       }
     });
     render();
+  }catch(err){
+    console.warn("loadRemoteContent error:", err);
   }
 }
 
@@ -1513,44 +1528,140 @@ let totalPoints = 0;
 let startTime = 0;
 
 let currentUserName = "";
-const AUTH_STORAGE_KEY = "hq_auth";
 
-async function doLogin(name, pass, opts={}){
-  const errorEl = document.getElementById('loginError');
-  const loginRes = await callSheetApi({ action:'login', name:name, pass:pass });
+/* Loads (or creates, first login) this reader's Firestore profile and
+   flips the screen from login -> app content. Shared by password login
+   and by the silent auto-login on page reload. */
+async function enterAppForUser(user, name){
+  currentUserDocRef = db.collection('users').doc(user.uid);
+  let snap = await currentUserDocRef.get();
 
-  if(!loginRes || loginRes.status !== "ok"){
-    if(!opts.silent){
-      errorEl.textContent = (loginRes && loginRes.message) ? loginRes.message : "เข้าสู่ระบบไม่สำเร็จ กรุณาลองใหม่";
-      errorEl.style.display = "block";
-    }
-    localStorage.removeItem(AUTH_STORAGE_KEY);
-    return false;
+  if(!snap.exists){
+    await currentUserDocRef.set({
+      name: name,
+      totalPoints: 0,
+      progress: {},
+      createdAt: firebase.firestore.FieldValue.serverTimestamp()
+    });
+    snap = await currentUserDocRef.get();
   }
 
-  currentUserName = name;
-  totalPoints = loginRes.totalPoints || 0;
+  const data = snap.data();
+  currentUserName = data.name || name;
+  totalPoints = data.totalPoints || 0;
 
-  /* progress from the sheet: an array of indices into the flattened
-     "books" array above, matching the previous zone-based format */
-  const doneIndices = loginRes.progress || [];
-  books.forEach((b, i) => { state[b.key] = doneIndices.includes(i) ? "done" : "unread"; });
-
-  localStorage.setItem(AUTH_STORAGE_KEY, JSON.stringify({ name, pass }));
+  const progress = data.progress || {};
+  books.forEach(b => { state[b.key] = progress[b.key] ? "done" : "unread"; });
 
   document.getElementById('loginScreen').style.display = "none";
   document.getElementById('appContent').style.display = "block";
-  document.getElementById('greetingText').innerHTML = `ยินดีต้อนรับ นักอ่าน <strong>${name}</strong> <span class="logout-link" onclick="logoutUser()">ออกจากระบบ</span>`;
+  document.getElementById('greetingText').innerHTML = `ยินดีต้อนรับ นักอ่าน <strong>${currentUserName}</strong> <span class="logout-link" onclick="logoutUser()">ออกจากระบบ</span>`;
   document.getElementById('pointsText').textContent = totalPoints;
 
   await loadRemoteContent();
   render();
-  return true;
+}
+
+/* Runs as a Firestore transaction so two devices/tabs finishing a quiz
+   for the same reader at the same moment can never stomp on each
+   other's point total (the exact race that plain Sheet writes can't
+   protect against). Returns the authoritative totalPoints from the
+   server, or null if the write failed (caller falls back to a local
+   optimistic update so the UI still works offline). */
+async function saveQuizResultRemote(bookKey, earnedPoints, passed){
+  if(!currentUserDocRef) return null;
+  try{
+    const newTotal = await db.runTransaction(async (tx)=>{
+      const snap = await tx.get(currentUserDocRef);
+      const data = snap.data() || {};
+      const current = data.totalPoints || 0;
+      const progress = data.progress || {};
+      if(passed) progress[bookKey] = true;
+      const updated = current + earnedPoints;
+      tx.update(currentUserDocRef, { totalPoints: updated, progress });
+      return updated;
+    });
+    return newTotal;
+  }catch(err){
+    console.warn("saveQuizResultRemote error:", err);
+    return null;
+  }
+}
+
+/* Also a transaction: re-checks the reader's points server-side (not
+   just whatever's cached in the browser tab) before deducting, so two
+   tabs/devices can't both redeem past zero. On success also appends a
+   row to the redemptions subcollection for the history view.
+   Returns { ok:true, totalPoints } or { ok:false, totalPoints, message }. */
+async function redeemRewardRemote(rewardKey, rewardTitle, cost){
+  if(!currentUserDocRef) return { ok:false, totalPoints, message:"ยังไม่ได้เข้าสู่ระบบ" };
+  try{
+    const result = await db.runTransaction(async (tx)=>{
+      const snap = await tx.get(currentUserDocRef);
+      const data = snap.data() || {};
+      const current = data.totalPoints || 0;
+      if(current < cost){
+        return { ok:false, totalPoints: current, message:"แต้มไม่พอแล้ว กรุณาลองรางวัลอื่น" };
+      }
+      const updated = current - cost;
+      tx.update(currentUserDocRef, { totalPoints: updated });
+      const redemptionRef = currentUserDocRef.collection('redemptions').doc();
+      tx.set(redemptionRef, {
+        rewardKey, rewardTitle, cost,
+        timestamp: firebase.firestore.FieldValue.serverTimestamp(),
+        totalPointsAfter: updated
+      });
+      return { ok:true, totalPoints: updated };
+    });
+    return result;
+  }catch(err){
+    console.warn("redeemRewardRemote error:", err);
+    return { ok:false, totalPoints, message:"แลกรางวัลไม่สำเร็จ ลองใหม่อีกครั้ง" };
+  }
+}
+
+/* Set right before we ask Firebase to sign in / register, so the auth
+   state listener below (the single place that calls enterAppForUser)
+   knows what display name to save for a brand-new account. Left null
+   for the silent session-restore-on-reload case, where the profile
+   already exists in Firestore and its saved name is used instead. */
+let pendingLoginName = null;
+
+async function doLogin(name, pass){
+  const errorEl = document.getElementById('loginError');
+  const email = nameToEmail(name);
+  pendingLoginName = name;
+
+  try{
+    try{
+      await auth.signInWithEmailAndPassword(email, pass);
+    }catch(err){
+      if(err.code === 'auth/user-not-found' || err.code === 'auth/invalid-credential'){
+        /* first-time login for this name -> auto-register, matching the
+           original "หากเป็นการเข้าใช้ครั้งแรก ระบบจะสร้างบัญชีให้อัตโนมัติ" behavior */
+        await auth.createUserWithEmailAndPassword(email, pass);
+      } else {
+        throw err;
+      }
+    }
+    /* success falls through to auth.onAuthStateChanged, which does the
+       actual screen transition once - see below */
+    return true;
+  }catch(err){
+    pendingLoginName = null;
+    console.warn("Login error:", err);
+    let msg = "เข้าสู่ระบบไม่สำเร็จ กรุณาลองใหม่";
+    if(err.code === 'auth/wrong-password') msg = "ชื่อนี้มีคนใช้แล้ว และรหัสผ่านไม่ตรงกับบัญชีเดิม กรุณาตรวจสอบรหัสผ่าน หรือใช้ชื่ออื่น";
+    if(err.code === 'auth/email-already-in-use') msg = "ชื่อนี้มีคนใช้แล้ว กรุณาตรวจสอบรหัสผ่าน หรือใช้ชื่ออื่น";
+    if(err.code === 'auth/weak-password') msg = "รหัสผ่านต้องมีอย่างน้อย 6 ตัวอักษร";
+    errorEl.textContent = msg;
+    errorEl.style.display = "block";
+    return false;
+  }
 }
 
 function logoutUser(){
-  localStorage.removeItem(AUTH_STORAGE_KEY);
-  location.reload();
+  auth.signOut().then(()=> location.reload());
 }
 
 document.getElementById('loginForm').addEventListener('submit', async (e)=>{
@@ -1572,19 +1683,21 @@ document.getElementById('loginForm').addEventListener('submit', async (e)=>{
   if(submitBtnEl){ submitBtnEl.disabled = false; submitBtnEl.textContent = "เข้าสู่ระบบ"; }
 });
 
-(async function tryAutoLogin(){
-  const saved = localStorage.getItem(AUTH_STORAGE_KEY);
-  if(!saved) return;
+/* Firebase keeps the sign-in session itself (IndexedDB), so on reload we
+   just wait for it to tell us who's signed in - no plaintext password
+   needs to sit in localStorage anymore. This one listener handles BOTH
+   a fresh doLogin() sign-in and a session restored on page reload, so
+   enterAppForUser() only ever runs from one place. */
+auth.onAuthStateChanged(async (user)=>{
+  if(!user) return;
+  const name = pendingLoginName || "";
+  pendingLoginName = null;
   try{
-    const { name, pass } = JSON.parse(saved);
-    if(name && pass){
-      document.getElementById('loginName').value = name;
-      await doLogin(name, pass, { silent:true });
-    }
+    await enterAppForUser(user, name);
   }catch(err){
-    localStorage.removeItem(AUTH_STORAGE_KEY);
+    console.warn("enterAppForUser error:", err);
   }
-})();
+});
 
 function openModal(bookKey){
   clearTimeout(window._autoExitTimer);
@@ -1701,7 +1814,6 @@ document.getElementById('submitBtn').addEventListener('click', async ()=>{
   const timeStr = `${mins}:${secs}`;
 
   const b = books.find(x=>x.key === currentBookKey);
-  const bookIdx = books.findIndex(x=>x.key === currentBookKey);
   let score = 0;
   const reviewList = document.getElementById('reviewList');
   reviewList.innerHTML = "";
@@ -1731,20 +1843,10 @@ document.getElementById('submitBtn').addEventListener('click', async ()=>{
   const alreadyDone = state[b.key] === "done";
   const earnedPoints = (passed && !alreadyDone) ? 10 : 0;
 
-  const saveRes = await callSheetApi({
-    action: 'saveResult',
-    name: currentUserName,
-    zoneIdx: bookIdx,
-    zoneKey: b.key,
-    score: score,
-    total: b.questions.length,
-    time: timeStr,
-    points: earnedPoints,
-    passed: passed
-  });
+  const newTotal = await saveQuizResultRemote(b.key, earnedPoints, passed);
 
-  if(saveRes && saveRes.status === "ok"){
-    totalPoints = saveRes.totalPoints;
+  if(newTotal !== null){
+    totalPoints = newTotal;
   } else if(earnedPoints > 0){
     totalPoints += earnedPoints;
   }
@@ -1852,13 +1954,7 @@ document.getElementById('rewardConfirmBtn').addEventListener('click', async ()=>
   btn.disabled = true;
   btn.textContent = "กำลังแลกรางวัล...";
 
-  const saveRes = await callSheetApi({
-    action: 'redeemReward',
-    name: currentUserName,
-    rewardKey: r.key,
-    rewardTitle: r.title,
-    cost: r.cost
-  });
+  const saveRes = await redeemRewardRemote(r.key, r.title, r.cost);
 
   btn.disabled = false;
   btn.textContent = "ยืนยันแลกรางวัล";
@@ -1866,7 +1962,7 @@ document.getElementById('rewardConfirmBtn').addEventListener('click', async ()=>
   /* backend explicitly rejected the redemption (e.g. not enough points after
      all - someone else redeemed on another device first) - don't touch
      points, just tell the reader and let them try a smaller reward */
-  if(saveRes && saveRes.status === "error"){
+  if(saveRes && !saveRes.ok){
     if(typeof saveRes.totalPoints === "number"){
       totalPoints = saveRes.totalPoints;
       document.getElementById('pointsText').textContent = totalPoints;
@@ -1878,10 +1974,10 @@ document.getElementById('rewardConfirmBtn').addEventListener('click', async ()=>
     return;
   }
 
-  if(saveRes && saveRes.status === "ok" && typeof saveRes.totalPoints === "number"){
+  if(saveRes && saveRes.ok && typeof saveRes.totalPoints === "number"){
     totalPoints = saveRes.totalPoints;
   } else {
-    /* backend not reachable / not wired up yet - still deduct locally so the UI works */
+    /* backend not reachable - still deduct locally so the UI works */
     totalPoints -= r.cost;
   }
 
@@ -1918,14 +2014,27 @@ async function openRedemptionHistory(){
   const contentEl = document.getElementById('historyContent');
   contentEl.innerHTML = `<div class="history-loading">กำลังโหลดข้อมูล...</div>`;
 
-  const res = await callSheetApi({ action:'getRedemptions', name: currentUserName });
-
-  if(!res || res.status !== "ok" || !Array.isArray(res.redemptions)){
+  let redemptions = [];
+  try{
+    const snap = await currentUserDocRef
+      .collection('redemptions')
+      .orderBy('timestamp', 'desc')
+      .limit(50)
+      .get();
+    redemptions = snap.docs.map(doc=>{
+      const d = doc.data();
+      const dateStr = d.timestamp && d.timestamp.toDate
+        ? d.timestamp.toDate().toLocaleString('th-TH', { dateStyle:'medium', timeStyle:'short' })
+        : "";
+      return { rewardTitle: d.rewardTitle, cost: d.cost, timestamp: dateStr };
+    });
+  }catch(err){
+    console.warn("getRedemptions error:", err);
     contentEl.innerHTML = `<div class="history-empty">ไม่สามารถโหลดประวัติได้ในขณะนี้</div>`;
     return;
   }
 
-  if(res.redemptions.length === 0){
+  if(redemptions.length === 0){
     contentEl.innerHTML = `<div class="history-empty">ยังไม่มีประวัติการแลกแต้ม</div>`;
     return;
   }
@@ -1933,7 +2042,7 @@ async function openRedemptionHistory(){
   const list = document.createElement('ul');
   list.className = "history-list";
 
-  res.redemptions.forEach(item=>{
+  redemptions.forEach(item=>{
     const li = document.createElement('li');
     li.innerHTML = `
       <div class="h-left">
