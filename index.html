@@ -354,6 +354,22 @@
     align-items:center;
     gap:8px;
   }
+  .reward-card .reward-photo-wrap{
+    width:100%;
+    aspect-ratio:1/1;
+    max-width:150px;
+    border-radius:8px;
+    overflow:hidden;
+    margin-bottom:6px;
+    background:rgba(36,48,31,0.06);
+    box-shadow:0 4px 10px rgba(0,0,0,0.12);
+  }
+  .reward-card .reward-photo{
+    width:100%;
+    height:100%;
+    object-fit:cover;
+    display:block;
+  }
   .reward-card .reward-icon{
     width:52px;
     height:52px;
@@ -979,7 +995,7 @@
   <div class="login-wrap">
     <div class="brand-block">
       <div class="brand-logo">
-        <img src="logo.png" alt="ตราศูนย์ส่งเสริมการเรียนรู้ระดับอำเภอเทิง">
+        <img src="logo.png?v=2" alt="ตราศูนย์ส่งเสริมการเรียนรู้ระดับอำเภอเทิง">
       </div>
       <div class="brand-name">ศูนย์ส่งเสริมการเรียนรู้ระดับอำเภอเทิง</div>
     </div>
@@ -1279,17 +1295,17 @@ const categories = [
 const rewards = [
   {
     /* 300 แต้ม: กระเป๋าผ้า */
-    key:"large", title:"กระเป๋าผ้า", cost:300, color:"#B4791F",
+    key:"large", title:"กระเป๋าผ้า", cost:300, color:"#B4791F", img:"forbook.png?v=2",
     icon:`<path d="M8.1 9.4V6.9a3.9 3.9 0 017.8 0v2.5" fill="none" stroke="#fff" stroke-width="1.7" stroke-linecap="round"/><path d="M5.3 9.4h13.4l1.2 10.4a1.4 1.4 0 01-1.4 1.6H5.5a1.4 1.4 0 01-1.4-1.6z" fill="#fff"/><rect x="10.4" y="11.8" width="3.2" height="2.4" rx="0.5" fill="#B4791F"/>`
   },
   {
     /* 200 แต้ม: กระเป๋าใส่ปากกา-ดินสอ */
-    key:"medium", title:"กระเป๋าใส่ปากกา", cost:200, color:"#2E8069",
+    key:"medium", title:"กระเป๋าใส่ปากกา", cost:200, color:"#2E8069", img:"forpen.png?v=2",
     icon:`<rect x="4.2" y="9.2" width="15.6" height="10.6" rx="3.4" fill="#fff"/><path d="M4.2 12.6h15.6" stroke="#2E8069" stroke-width="1.1"/><path d="M14.3 9.2l2.6-4.5c.3-.5 1-.65 1.45-.28l.5.4c.4.33.46 1 .12 1.42L15.9 9.9" fill="#2E8069"/><circle cx="7" cy="16" r="0.9" fill="#2E8069"/>`
   },
   {
     /* 100 แต้ม: ปากกาสวยงาม */
-    key:"small", title:"ปากกา", cost:100, color:"#1F6E5C",
+    key:"small", title:"ปากกา", cost:100, color:"#1F6E5C", img:"forwrite.png?v=2",
     icon:`<path d="M6.3 17.7l1.9-5.1 8.7-8.7a1.85 1.85 0 012.6 2.6l-8.7 8.7-5.1 1.9z" fill="#fff"/><path d="M8.2 12.6l3.2 3.2" stroke="#1F6E5C" stroke-width="1.3" stroke-linecap="round"/><circle cx="6.1" cy="17.9" r="1.2" fill="#fff"/>`
   }
 ];
@@ -2244,6 +2260,20 @@ function render(){
   renderRewards();
 }
 
+/* ถ้ารูปจริง (forbook.png / forpen.png / forwrite.png) โหลดไม่ขึ้นด้วยเหตุผล
+   ใดก็ตาม (ยังไม่ได้อัปโหลด, พิมพ์ชื่อไฟล์ผิด, ลบไฟล์ทิ้ง) ให้สลับกลับไปโชว์
+   ไอคอนเส้น SVG เดิมแทน กันไม่ให้การ์ดรางวัลว่างเปล่าดูแปลก ๆ */
+function handleRewardImgError(imgEl, key){
+  const r = rewards.find(x=>x.key === key);
+  if(!r) return;
+  const wrap = imgEl.parentElement;
+  const iconDiv = document.createElement('div');
+  iconDiv.className = "reward-icon";
+  iconDiv.style.background = r.color;
+  iconDiv.innerHTML = `<svg viewBox="0 0 24 24">${r.icon}</svg>`;
+  wrap.replaceWith(iconDiv);
+}
+
 function renderRewards(){
   const root = document.getElementById('rewardsSection');
   root.innerHTML = "";
@@ -2270,8 +2300,8 @@ function renderRewards(){
     const card = document.createElement('div');
     card.className = "reward-card";
     card.innerHTML = `
-      <div class="reward-icon" style="background:${r.color}">
-        <svg viewBox="0 0 24 24">${r.icon}</svg>
+      <div class="reward-photo-wrap">
+        <img class="reward-photo" src="${r.img}" alt="${r.title}" onerror="handleRewardImgError(this,'${r.key}')">
       </div>
       <div class="reward-title">${r.title}</div>
       <div class="reward-cost">${r.cost} แต้ม</div>
