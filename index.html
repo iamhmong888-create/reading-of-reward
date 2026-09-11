@@ -390,6 +390,66 @@
     color:var(--ink-soft);
   }
 
+  /* ---------- Rewards: single scan-to-redeem CTA ---------- */
+  .rewards-scan-cta{
+    margin-top:26px;
+    padding:24px 20px;
+    border-radius:10px;
+    background:rgba(180,144,63,0.10);
+    border:1px dashed rgba(180,144,63,0.55);
+    text-align:center;
+  }
+  .rewards-scan-cta .btn{
+    width:auto;
+    padding:15px 32px;
+    font-size:15.5px;
+    display:inline-flex;
+    align-items:center;
+    gap:8px;
+  }
+  .rewards-scan-hint{
+    margin:12px 0 0;
+    font-size:12.5px;
+    color:var(--ink-soft);
+    line-height:1.7;
+    max-width:440px;
+    margin-left:auto;
+    margin-right:auto;
+  }
+
+  /* ---------- QR scan modal (reader) ---------- */
+  .qr-scan-frame{
+    position:relative;
+    width:100%;
+    max-width:300px;
+    aspect-ratio:1/1;
+    margin:0 auto 16px;
+    border-radius:14px;
+    overflow:hidden;
+    background:#111;
+  }
+  .qr-scan-frame video{
+    width:100%;
+    height:100%;
+    object-fit:cover;
+    display:block;
+  }
+  .qr-scan-reticle{
+    position:absolute;
+    inset:13%;
+    border:3px solid var(--brass-bright);
+    border-radius:16px;
+    pointer-events:none;
+    box-shadow:0 0 0 999px rgba(0,0,0,0.32);
+  }
+  .qr-scan-status{
+    text-align:center;
+    font-size:13.5px;
+    color:var(--ink-soft);
+    margin:0 0 18px;
+    min-height:18px;
+  }
+
   .site-footer{
     max-width:920px;
     margin:0 auto;
@@ -888,6 +948,28 @@
     font-size:13px;
     white-space:normal;
   }
+
+  /* ---------- Admin: QR code generator notice
+     (ตัว UI จริงสำหรับกดแต้ม/สร้าง QR ย้ายไปอยู่ที่ admin.html แล้ว
+     เหลือไว้แค่กล่องข้อความแจ้งเตือนในหน้านี้) ---------- */
+  .admin-qr-wrap{
+    background:rgba(255,255,255,0.5);
+    border:1px solid rgba(42,29,18,0.15);
+    border-radius:8px;
+    padding:22px 20px;
+    margin-bottom:30px;
+  }
+  .admin-qr-wrap h3{
+    font-size:16px;
+    margin:0 0 6px;
+    color:var(--wood-dark);
+  }
+  .admin-qr-desc{
+    font-size:12.5px;
+    color:var(--ink-soft);
+    margin:0;
+    line-height:1.7;
+  }
 </style>
 </head>
 <body>
@@ -967,6 +1049,12 @@
 
   <div class="page" id="pageAdmin">
     <div class="admin-summary" id="adminSummary"></div>
+
+    <div class="admin-qr-wrap">
+      <h3>🎁 ออก QR Code สำหรับแลกรางวัล</h3>
+      <p class="admin-qr-desc">ฟีเจอร์ออก QR Code ถูกย้ายไปอยู่ในไฟล์แยกต่างหากชื่อ <strong>admin.html</strong> แล้ว (เข้าใช้งานได้เร็วกว่า ไม่ต้องโหลดหน้าห้องสมุดทั้งหมด) กรุณาเปิดไฟล์นั้นแล้วล็อกอินด้วยบัญชีแอดมินเดียวกันนี้</p>
+    </div>
+
     <div class="admin-toolbar">
       <button class="btn" id="adminExportBtn" type="button" style="width:auto;">📊 ส่งออกเป็น Excel</button>
       <button class="btn secondary" id="adminRefreshBtn" type="button" style="width:auto;">🔄 รีเฟรชข้อมูล</button>
@@ -1027,7 +1115,7 @@
 
   <div class="modal" id="modalRewardConfirm" style="display:none;">
     <div class="zone-tag">แลกรางวัล</div>
-    <h2 id="rewardConfirmTitle">รางวัลขนาดใหญ่</h2>
+    <h2 id="rewardConfirmTitle">กระเป๋าผ้า</h2>
     <p id="rewardConfirmDesc">ยืนยันแลกรางวัลนี้ด้วย 50 แต้มหรือไม่ ?</p>
     <button class="btn" id="rewardConfirmBtn">ยืนยันแลกรางวัล</button>
     <button class="btn secondary" id="rewardCancelBtn">ยกเลิก</button>
@@ -1036,8 +1124,20 @@
   <div class="modal" id="modalRewardDone" style="display:none;">
     <div class="zone-tag">แลกรางวัลสำเร็จ</div>
     <h2 id="rewardDoneTitle">ยินดีด้วย !</h2>
-    <p id="rewardDoneDesc">คุณแลกรางวัลขนาดใหญ่เรียบร้อยแล้ว</p>
+    <p id="rewardDoneDesc">คุณแลกกระเป๋าผ้าเรียบร้อยแล้ว</p>
     <button class="btn" id="rewardDoneBtn">ปิด</button>
+  </div>
+
+  <div class="modal wide" id="modalQrScan" style="display:none;">
+    <div class="zone-tag">แลกรางวัลด้วย QR Code</div>
+    <h2 style="margin-bottom:14px;">สแกน QR Code จากเจ้าหน้าที่</h2>
+    <div class="qr-scan-frame">
+      <video id="qrScanVideo" playsinline muted autoplay></video>
+      <div class="qr-scan-reticle"></div>
+    </div>
+    <canvas id="qrScanCanvas" style="display:none;"></canvas>
+    <p class="qr-scan-status" id="qrScanStatus">กำลังเปิดกล้อง...</p>
+    <button class="btn secondary" id="qrScanCloseBtn">ปิด</button>
   </div>
 
   <div class="modal wide" id="modalChapters" style="display:none;">
@@ -1064,6 +1164,9 @@
 <script src="https://www.gstatic.com/firebasejs/10.13.0/firebase-firestore-compat.js"></script>
 <!-- SheetJS - ใช้สร้างไฟล์ .xlsx สำหรับปุ่ม "ส่งออกเป็น Excel" ในหน้า admin -->
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<!-- jsQR - อ่าน/ถอดรหัส QR Code จากภาพกล้อง (ฝั่งนักอ่านตอนสแกน)
+     (การ "สร้าง" ภาพ QR Code ย้ายไปอยู่ในไฟล์ admin.html แยกต่างหากแล้ว) -->
+<script src="https://cdn.jsdelivr.net/npm/jsqr@1.4.0/dist/jsQR.min.js"></script>
 
 <script>
 /* ===================================================================
@@ -1174,16 +1277,19 @@ const categories = [
 =================================================================== */
 const rewards = [
   {
-    key:"large", title:"รางวัลขนาดใหญ่", cost:300, color:"#B4791F",
-    icon:`<path d="M4 10h16v10a1 1 0 01-1 1H5a1 1 0 01-1-1z" fill="#fff"/><path d="M3 7h18v3a1 1 0 01-1 1H4a1 1 0 01-1-1z" fill="#fff"/><rect x="11" y="7" width="2" height="14" fill="#B4791F"/><path d="M12 7C10 3 6 3 6 5.5S9 7 12 7zM12 7c2-4 6-4 6-1.5S15 7 12 7z" fill="#fff"/>`
+    /* 300 แต้ม: กระเป๋าผ้า */
+    key:"large", title:"กระเป๋าผ้า", cost:300, color:"#B4791F",
+    icon:`<path d="M8.1 9.4V6.9a3.9 3.9 0 017.8 0v2.5" fill="none" stroke="#fff" stroke-width="1.7" stroke-linecap="round"/><path d="M5.3 9.4h13.4l1.2 10.4a1.4 1.4 0 01-1.4 1.6H5.5a1.4 1.4 0 01-1.4-1.6z" fill="#fff"/><rect x="10.4" y="11.8" width="3.2" height="2.4" rx="0.5" fill="#B4791F"/>`
   },
   {
-    key:"medium", title:"รางวัลขนาดกลาง", cost:200, color:"#2E8069",
-    icon:`<path d="M4.5 10.5h15v9a1 1 0 01-1 1h-13a1 1 0 01-1-1z" fill="#fff"/><path d="M3.5 7.5h17v2.7a1 1 0 01-1 1h-15a1 1 0 01-1-1z" fill="#fff"/><rect x="11.2" y="7.5" width="1.6" height="13" fill="#2E8069"/><path d="M12 7.5c-1.6-3.2-4.8-3.2-4.8-1.1S9.6 7.5 12 7.5zM12 7.5c1.6-3.2 4.8-3.2 4.8-1.1S14.4 7.5 12 7.5z" fill="#fff"/>`
+    /* 200 แต้ม: กระเป๋าใส่ปากกา-ดินสอ */
+    key:"medium", title:"กระเป๋าใส่ปากกา", cost:200, color:"#2E8069",
+    icon:`<rect x="4.2" y="9.2" width="15.6" height="10.6" rx="3.4" fill="#fff"/><path d="M4.2 12.6h15.6" stroke="#2E8069" stroke-width="1.1"/><path d="M14.3 9.2l2.6-4.5c.3-.5 1-.65 1.45-.28l.5.4c.4.33.46 1 .12 1.42L15.9 9.9" fill="#2E8069"/><circle cx="7" cy="16" r="0.9" fill="#2E8069"/>`
   },
   {
-    key:"small", title:"รางวัลขนาดเล็ก", cost:100, color:"#1F6E5C",
-    icon:`<path d="M5.5 11h13v7.5a1 1 0 01-1 1h-11a1 1 0 01-1-1z" fill="#fff"/><path d="M4.7 8.4h14.6v2.3a1 1 0 01-1 1H5.7a1 1 0 01-1-1z" fill="#fff"/><rect x="11.3" y="8.4" width="1.4" height="11.1" fill="#1F6E5C"/><path d="M12 8.4c-1.3-2.6-3.9-2.6-3.9-.9S9.9 8.4 12 8.4zM12 8.4c1.3-2.6 3.9-2.6 3.9-.9S14.1 8.4 12 8.4z" fill="#fff"/>`
+    /* 100 แต้ม: ปากกาสวยงาม */
+    key:"small", title:"ปากกา", cost:100, color:"#1F6E5C",
+    icon:`<path d="M6.3 17.7l1.9-5.1 8.7-8.7a1.85 1.85 0 012.6 2.6l-8.7 8.7-5.1 1.9z" fill="#fff"/><path d="M8.2 12.6l3.2 3.2" stroke="#1F6E5C" stroke-width="1.3" stroke-linecap="round"/><circle cx="6.1" cy="17.9" r="1.2" fill="#fff"/>`
   }
 ];
 
@@ -2157,8 +2263,9 @@ function renderRewards(){
   const row = document.createElement('div');
   row.className = "rewards-row";
 
+  /* แคตตาล็อกรางวัล: แสดงไอคอน ชื่อ และจำนวนแต้มเท่านั้น ไม่มีปุ่มแลกในการ์ด
+     การแลกรางวัลทั้งหมดทำผ่านปุ่มสแกน QR Code ปุ่มเดียวด้านล่างแทน */
   rewards.forEach(r=>{
-    const affordable = totalPoints >= r.cost;
     const card = document.createElement('div');
     card.className = "reward-card";
     card.innerHTML = `
@@ -2167,17 +2274,21 @@ function renderRewards(){
       </div>
       <div class="reward-title">${r.title}</div>
       <div class="reward-cost">${r.cost} แต้ม</div>
-      <button class="btn reward-btn" data-key="${r.key}" ${affordable ? "" : "disabled"}>แลกรางวัล</button>
-      ${affordable ? "" : `<div class="reward-lack">แต้มไม่พอ (ขาดอีก ${r.cost - totalPoints} แต้ม)</div>`}
     `;
     row.appendChild(card);
   });
 
   root.appendChild(row);
 
-  root.querySelectorAll('.reward-btn').forEach(btn=>{
-    btn.addEventListener('click', ()=> openRewardConfirm(btn.dataset.key));
-  });
+  const scanCta = document.createElement('div');
+  scanCta.className = "rewards-scan-cta";
+  scanCta.innerHTML = `
+    <button class="btn" id="scanQrBtn" type="button">📷 สแกน QR Code เพื่อแลกรางวัล</button>
+    <p class="rewards-scan-hint">แจ้งเจ้าหน้าที่ว่าต้องการแลกรางวัลชิ้นใด เจ้าหน้าที่จะออก QR Code ให้ตามจำนวนแต้ม จากนั้นกดปุ่มนี้เพื่อสแกนและตัดแต้มอัตโนมัติ</p>
+  `;
+  root.appendChild(scanCta);
+
+  document.getElementById('scanQrBtn').addEventListener('click', openQrScanModal);
 }
 
 function fitCoverTitles(){
@@ -2345,6 +2456,75 @@ async function redeemRewardRemote(rewardKey, rewardTitle, cost){
   }
 }
 
+/* ===================================================================
+   QR-CODE REDEMPTION
+   Admin generates a one-time code (Firestore doc under "redeemCodes",
+   doc id = the code itself) worth a chosen number of points and shows
+   it as a QR. A reader scans it with their own camera; the code string
+   decoded from the QR is looked up here. peekQrCodeRemote() is a plain
+   read used only to show the confirm dialog ("แลกด้วย X แต้ม?"). The
+   actual deduction happens in redeemByQrCodeRemote(), which re-checks
+   everything (code still unused, reader has enough points) inside one
+   Firestore transaction so the code can never be spent twice even if
+   two readers scan the same QR at nearly the same moment. */
+async function peekQrCodeRemote(code){
+  try{
+    const snap = await db.collection('redeemCodes').doc(code).get();
+    if(!snap.exists) return { ok:false, message:"ไม่พบ QR Code นี้ในระบบ กรุณาขอ QR Code ใหม่จากเจ้าหน้าที่" };
+    const data = snap.data();
+    if(data.used) return { ok:false, message:"QR Code นี้ถูกใช้แลกรางวัลไปแล้ว" };
+    return { ok:true, points: data.points || 0 };
+  }catch(err){
+    console.warn("peekQrCodeRemote error:", err);
+    return { ok:false, message:"ไม่สามารถตรวจสอบ QR Code ได้ กรุณาลองใหม่" };
+  }
+}
+
+async function redeemByQrCodeRemote(code){
+  if(!currentUserDocRef) return { ok:false, message:"ยังไม่ได้เข้าสู่ระบบ" };
+  const codeRef = db.collection('redeemCodes').doc(code);
+  try{
+    const result = await db.runTransaction(async (tx)=>{
+      const codeSnap = await tx.get(codeRef);
+      if(!codeSnap.exists){
+        return { ok:false, message:"ไม่พบ QR Code นี้ในระบบ กรุณาขอ QR Code ใหม่จากเจ้าหน้าที่" };
+      }
+      const codeData = codeSnap.data();
+      if(codeData.used){
+        return { ok:false, message:"QR Code นี้ถูกใช้แลกรางวัลไปแล้ว" };
+      }
+
+      const userSnap = await tx.get(currentUserDocRef);
+      const userData = userSnap.data() || {};
+      const current = userData.totalPoints || 0;
+      const cost = codeData.points || 0;
+      if(current < cost){
+        return { ok:false, totalPoints: current, message:"แต้มของคุณไม่พอสำหรับ QR Code นี้" };
+      }
+
+      const updated = current - cost;
+      tx.update(currentUserDocRef, { totalPoints: updated });
+      tx.update(codeRef, {
+        used:true,
+        usedBy: currentUserDocRef.id,
+        usedByName: currentUserName,
+        usedAt: firebase.firestore.FieldValue.serverTimestamp()
+      });
+      const redemptionRef = currentUserDocRef.collection('redemptions').doc();
+      tx.set(redemptionRef, {
+        rewardTitle: "แลกรางวัลด้วย QR Code", cost,
+        timestamp: firebase.firestore.FieldValue.serverTimestamp(),
+        totalPointsAfter: updated
+      });
+      return { ok:true, totalPoints: updated, cost };
+    });
+    return result;
+  }catch(err){
+    console.warn("redeemByQrCodeRemote error:", err);
+    return { ok:false, message:"แลกรางวัลไม่สำเร็จ ลองสแกนใหม่อีกครั้ง" };
+  }
+}
+
 /* Set right before we ask Firebase to sign in / register, so the auth
    state listener below (the single place that calls enterAppForUser)
    knows what display name to save for a brand-new account. Left null
@@ -2359,12 +2539,15 @@ async function doLogin(name, pass){
 
   try{
     try{
-      await auth.signInWithEmailAndPassword(email, pass);
+      await auth.createUserWithEmailAndPassword(email, pass);
+      /* ชื่อนี้ยังไม่เคยมีบัญชีมาก่อน - สร้างบัญชีใหม่สำเร็จ (สมัครครั้งแรก) */
     }catch(err){
-      if(err.code === 'auth/user-not-found' || err.code === 'auth/invalid-credential'){
-        /* first-time login for this name -> auto-register, matching the
-           original "หากเป็นการเข้าใช้ครั้งแรก ระบบจะสร้างบัญชีให้อัตโนมัติ" behavior */
-        await auth.createUserWithEmailAndPassword(email, pass);
+      if(err.code === 'auth/email-already-in-use'){
+        /* กรณีปกติของผู้ใช้เดิม: ชื่อนี้มีบัญชีอยู่แล้ว -> เข้าสู่ระบบด้วยรหัสผ่าน
+           ที่กรอกจริง ๆ (แม่นยำกว่าเดิม เพราะ error ที่ได้จาก signIn ตรงนี้
+           อย่าง wrong-password / invalid-credential ไม่กำกวมเหมือนตอนเช็คจาก
+           createUser อย่างเดียว) */
+        await auth.signInWithEmailAndPassword(email, pass);
       } else {
         throw err;
       }
@@ -2376,8 +2559,7 @@ async function doLogin(name, pass){
     pendingLoginName = null;
     console.warn("Login error:", err);
     let msg = "เข้าสู่ระบบไม่สำเร็จ กรุณาลองใหม่";
-    if(err.code === 'auth/wrong-password') msg = "ชื่อนี้มีคนใช้แล้ว และรหัสผ่านไม่ตรงกับบัญชีเดิม กรุณาตรวจสอบรหัสผ่าน หรือใช้ชื่ออื่น";
-    if(err.code === 'auth/email-already-in-use') msg = "ชื่อนี้มีคนใช้แล้ว กรุณาตรวจสอบรหัสผ่าน หรือใช้ชื่ออื่น";
+    if(err.code === 'auth/wrong-password' || err.code === 'auth/invalid-credential') msg = "รหัสผ่านไม่ตรงกับชื่อนี้ กรุณาตรวจสอบรหัสผ่าน หรือใช้ชื่ออื่น";
     if(err.code === 'auth/weak-password') msg = "รหัสผ่านต้องมีอย่างน้อย 6 ตัวอักษร";
     errorEl.textContent = msg;
     errorEl.style.display = "block";
@@ -2891,8 +3073,13 @@ document.getElementById('retryBtn').addEventListener('click', ()=>{
   startQuiz();
 });
 
-/* ---------------- Reward redemption ---------------- */
+/* ---------------- Reward redemption (via QR Code) ---------------- */
+/* pendingRewardKey เป็นของระบบแลกรางวัลแบบเดิม (ไม่ได้ใช้ปุ่มในการ์ดแล้ว
+   แต่เก็บฟังก์ชันไว้เผื่อใช้งานในอนาคต) ส่วน pendingQrCode คือรหัสที่อ่านได้
+   จากการสแกน QR ซึ่งเป็นเส้นทางเดียวที่ใช้งานจริงตอนนี้ - ปุ่มยืนยัน/ยกเลิก
+   ใน modalRewardConfirm ใช้ modal ร่วมกัน โดยแยกพฤติกรรมตามว่าค่าไหนถูกตั้งไว้ */
 let pendingRewardKey = null;
+let pendingQrCode = null;
 
 function openRewardConfirm(rewardKey){
   const r = rewards.find(x=>x.key === rewardKey);
@@ -2903,6 +3090,7 @@ function openRewardConfirm(rewardKey){
   }
   clearTimeout(window._autoExitTimer);
   pendingRewardKey = rewardKey;
+  pendingQrCode = null;
 
   document.getElementById('rewardConfirmTitle').textContent = r.title;
   document.getElementById('rewardConfirmDesc').textContent =
@@ -2913,16 +3101,59 @@ function openRewardConfirm(rewardKey){
   document.getElementById('modalResult').style.display = "none";
   document.getElementById('modalRewardDone').style.display = "none";
   document.getElementById('modalHistory').style.display = "none";
+  document.getElementById('modalQrScan').style.display = "none";
   document.getElementById('modalRewardConfirm').style.display = "block";
   document.getElementById('overlay').classList.add('show');
 }
 
 document.getElementById('rewardCancelBtn').addEventListener('click', ()=>{
   pendingRewardKey = null;
+  pendingQrCode = null;
   document.getElementById('overlay').classList.remove('show');
 });
 
 document.getElementById('rewardConfirmBtn').addEventListener('click', async ()=>{
+  /* --- เส้นทางแลกรางวัลด้วย QR Code (ใช้งานจริงในหน้าแอป) --- */
+  if(pendingQrCode){
+    const code = pendingQrCode;
+    const btn = document.getElementById('rewardConfirmBtn');
+    btn.disabled = true;
+    btn.textContent = "กำลังแลกรางวัล...";
+
+    const saveRes = await redeemByQrCodeRemote(code);
+
+    btn.disabled = false;
+    btn.textContent = "ยืนยันแลกรางวัล";
+
+    if(!saveRes || !saveRes.ok){
+      if(saveRes && typeof saveRes.totalPoints === "number"){
+        totalPoints = saveRes.totalPoints;
+        document.getElementById('pointsText').textContent = totalPoints;
+      }
+      document.getElementById('overlay').classList.remove('show');
+      showToast((saveRes && saveRes.message) || "แลกรางวัลไม่สำเร็จ");
+      pendingQrCode = null;
+      renderRewards();
+      return;
+    }
+
+    totalPoints = saveRes.totalPoints;
+    document.getElementById('pointsText').textContent = totalPoints;
+
+    document.getElementById('rewardDoneTitle').textContent = "ยินดีด้วย !";
+    document.getElementById('rewardDoneDesc').textContent = `แลกรางวัลด้วย QR Code สำเร็จ (-${saveRes.cost} แต้ม)`;
+
+    document.getElementById('modalRewardConfirm').style.display = "none";
+    document.getElementById('modalRewardDone').style.display = "block";
+
+    showToast(`-${saveRes.cost} แต้ม แลกรางวัลสำเร็จ`);
+
+    pendingQrCode = null;
+    renderRewards();
+    return;
+  }
+
+  /* --- เส้นทางเดิม (อ้างอิง key ในอาเรย์ rewards โดยตรง) --- */
   const r = rewards.find(x=>x.key === pendingRewardKey);
   if(!r) return;
 
@@ -2980,6 +3211,113 @@ document.getElementById('rewardConfirmBtn').addEventListener('click', async ()=>
 document.getElementById('rewardDoneBtn').addEventListener('click', ()=>{
   document.getElementById('overlay').classList.remove('show');
 });
+
+/* ---------------- QR Code scanning (กล้องฝั่งนักอ่าน) ---------------- */
+let qrScanStream = null;
+let qrScanRAF = null;
+let qrScanBusy = false;
+
+async function openQrScanModal(){
+  clearTimeout(window._autoExitTimer);
+  qrScanBusy = false;
+
+  document.getElementById('modalReady').style.display = "none";
+  document.getElementById('modalQuiz').style.display = "none";
+  document.getElementById('modalResult').style.display = "none";
+  document.getElementById('modalRewardConfirm').style.display = "none";
+  document.getElementById('modalRewardDone').style.display = "none";
+  document.getElementById('modalHistory').style.display = "none";
+  document.getElementById('modalQrScan').style.display = "block";
+  document.getElementById('overlay').classList.add('show');
+  document.getElementById('qrScanStatus').textContent = "กำลังเปิดกล้อง...";
+
+  if(!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia){
+    document.getElementById('qrScanStatus').textContent = "อุปกรณ์นี้ไม่รองรับการเปิดกล้องผ่านเบราว์เซอร์";
+    return;
+  }
+  if(typeof jsQR === "undefined"){
+    document.getElementById('qrScanStatus').textContent = "โหลดไลบรารีสแกน QR ไม่สำเร็จ กรุณาลองใหม่";
+    return;
+  }
+
+  try{
+    qrScanStream = await navigator.mediaDevices.getUserMedia({ video:{ facingMode:"environment" } });
+  }catch(err){
+    console.warn("getUserMedia error:", err);
+    document.getElementById('qrScanStatus').textContent = "เปิดกล้องไม่สำเร็จ กรุณาอนุญาตให้เว็บนี้ใช้กล้อง แล้วลองใหม่";
+    return;
+  }
+
+  const video = document.getElementById('qrScanVideo');
+  video.srcObject = qrScanStream;
+  try{ await video.play(); }catch(e){ /* บางเบราว์เซอร์ autoplay แล้วเรียก play() ซ้ำจะ throw เฉย ๆ ไม่เป็นไร */ }
+
+  document.getElementById('qrScanStatus').textContent = "เล็งกล้องไปที่ QR Code ที่เจ้าหน้าที่แสดงให้";
+  qrScanRAF = requestAnimationFrame(scanQrFrame);
+}
+
+function scanQrFrame(){
+  const video = document.getElementById('qrScanVideo');
+  const canvas = document.getElementById('qrScanCanvas');
+
+  if(video && video.readyState === video.HAVE_ENOUGH_DATA && !qrScanBusy){
+    canvas.width = video.videoWidth;
+    canvas.height = video.videoHeight;
+    const ctx = canvas.getContext('2d');
+    ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+    const imgData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+    const found = jsQR(imgData.data, imgData.width, imgData.height, { inversionAttempts:"dontInvert" });
+    if(found && found.data){
+      qrScanBusy = true;
+      handleQrDetected(found.data.trim());
+      return;
+    }
+  }
+  qrScanRAF = requestAnimationFrame(scanQrFrame);
+}
+
+function stopQrScan(){
+  if(qrScanRAF) cancelAnimationFrame(qrScanRAF);
+  qrScanRAF = null;
+  if(qrScanStream){
+    qrScanStream.getTracks().forEach(t=> t.stop());
+    qrScanStream = null;
+  }
+  const video = document.getElementById('qrScanVideo');
+  if(video) video.srcObject = null;
+}
+
+function closeQrScanModal(){
+  stopQrScan();
+  qrScanBusy = false;
+  document.getElementById('modalQrScan').style.display = "none";
+  document.getElementById('overlay').classList.remove('show');
+}
+
+document.getElementById('qrScanCloseBtn').addEventListener('click', closeQrScanModal);
+
+async function handleQrDetected(code){
+  stopQrScan();
+  document.getElementById('qrScanStatus').textContent = "กำลังตรวจสอบ QR Code...";
+
+  const peek = await peekQrCodeRemote(code);
+
+  if(!peek.ok){
+    showToast(peek.message || "QR Code ไม่ถูกต้อง");
+    closeQrScanModal();
+    return;
+  }
+
+  pendingQrCode = code;
+  pendingRewardKey = null;
+
+  document.getElementById('rewardConfirmTitle').textContent = "แลกรางวัลด้วย QR Code";
+  document.getElementById('rewardConfirmDesc').textContent =
+    `ยืนยันแลกรางวัลนี้ด้วย ${peek.points} แต้มหรือไม่ ? แต้มของคุณจะเหลือ ${totalPoints - peek.points} แต้ม`;
+
+  document.getElementById('modalQrScan').style.display = "none";
+  document.getElementById('modalRewardConfirm').style.display = "block";
+}
 
 /* ---------------- Redemption history ---------------- */
 async function openRedemptionHistory(){
